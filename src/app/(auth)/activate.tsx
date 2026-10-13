@@ -1,4 +1,5 @@
 import { zodResolver } from '@hookform/resolvers/zod';
+import { useLocalSearchParams } from 'expo-router';
 import { ShieldCheck } from 'lucide-react-native';
 import { useForm } from 'react-hook-form';
 import { StyleSheet, View } from 'react-native';
@@ -9,6 +10,7 @@ import { FormField } from '@/components/ui/form-field';
 import { Screen } from '@/components/ui/screen';
 import { completeSignIn } from '@/features/auth/auth-actions';
 import { activateSchema, DEVICE, type ActivateValues } from '@/features/auth/schemas';
+import { sanitizeCode, sanitizePhone } from '@/lib/phone';
 import { errorMessage, fieldErrors } from '@/lib/errors';
 import { useActivateMutation } from '@/services/api/patient-api';
 import { useAppDispatch } from '@/store';
@@ -16,10 +18,11 @@ import { space } from '@/theme/tokens';
 
 export default function ActivateScreen() {
   const dispatch = useAppDispatch();
+  const params = useLocalSearchParams<{ phone?: string }>();
   const [activate, { isLoading, error }] = useActivateMutation();
   const form = useForm<ActivateValues>({
     resolver: zodResolver(activateSchema),
-    defaultValues: { phone: '', code: '', password: '', confirm: '' },
+    defaultValues: { phone: params.phone ?? '', code: '', password: '', confirm: '' },
   });
 
   const submit = form.handleSubmit(async ({ phone, code, password }) => {
@@ -45,6 +48,7 @@ export default function ActivateScreen() {
       <FormField
         control={form.control}
         name="phone"
+        sanitize={sanitizePhone}
         label="Phone number"
         placeholder="0300 1234567"
         keyboardType="phone-pad"
@@ -54,6 +58,7 @@ export default function ActivateScreen() {
       <FormField
         control={form.control}
         name="code"
+        sanitize={sanitizeCode}
         label="Activation code"
         placeholder="6 digits"
         keyboardType="number-pad"

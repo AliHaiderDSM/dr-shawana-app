@@ -7,9 +7,10 @@ interface FormFieldProps<T extends FieldValues> extends Omit<
 > {
   control: Control<T>;
   name: FieldPath<T>;
+  sanitize?: (value: string) => string;
 }
 
-export function FormField<T extends FieldValues>({ control, name, ...props }: FormFieldProps<T>) {
+export function FormField<T extends FieldValues>({ control, name, sanitize, ...props }: FormFieldProps<T>) {
   return (
     <Controller
       control={control}
@@ -19,7 +20,7 @@ export function FormField<T extends FieldValues>({ control, name, ...props }: Fo
           {...props}
           ref={field.ref}
           value={typeof field.value === 'string' ? field.value : ''}
-          onChangeText={field.onChange}
+          onChangeText={(text) => field.onChange(sanitize ? sanitize(text) : text)}
           onBlur={field.onBlur}
           error={fieldState.error?.message}
         />

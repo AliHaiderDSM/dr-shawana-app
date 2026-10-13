@@ -25,7 +25,8 @@ export function errorStatus(error: AnyError) {
 
 export function errorMessage(error: AnyError, fallback = 'Something went wrong. Please try again.') {
   if (!error) return fallback;
-  if (isOffline(error)) return 'No internet connection. Check your connection and try again.';
+  if (isOffline(error))
+    return 'Could not reach the clinic server. Check your internet connection and try again.';
   if (isFetchError(error)) {
     const body = error.data as ApiErrorBody | undefined;
     const detail = body?.error?.details?.find((d) => d.message)?.message;

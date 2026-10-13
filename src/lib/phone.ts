@@ -5,3 +5,7 @@ export function isValidPhone(raw: string) {
   else if (digits.length === 10 && digits.startsWith('3')) digits = `92${digits}`;
   return digits.length >= 10 && digits.length <= 15;
 }
+
+export const sanitizePhone = (value: string) => value.replace(/[^\d+\s-]/g, '').slice(0, 20);
+
+export const sanitizeCode = (value: string) => value.replace(/\D/g, '').slice(0, 6);

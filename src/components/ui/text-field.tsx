@@ -1,8 +1,9 @@
 import { Eye, EyeOff } from 'lucide-react-native';
-import { forwardRef, useState } from 'react';
+import { forwardRef, useRef, useState } from 'react';
 import { Pressable, StyleSheet, TextInput, View, type TextInputProps } from 'react-native';
 import { colors, fontSize, icon, maxFontScale, radius, space, touch } from '@/theme/tokens';
 import { AppText } from './app-text';
+import { useRevealOnFocus } from './keyboard-reveal';
 
 export interface TextFieldProps extends Omit<TextInputProps, 'style'> {
   label: string;
@@ -19,8 +20,10 @@ export const TextField = forwardRef<TextInput, TextFieldProps>(function TextFiel
 ) {
   const [hidden, setHidden] = useState(true);
   const [focused, setFocused] = useState(false);
+  const fieldRef = useRef<View>(null);
+  const reveal = useRevealOnFocus();
   return (
-    <View style={styles.field}>
+    <View ref={fieldRef} style={styles.field}>
       <AppText variant="label" nativeID={`${label}-label`}>
         {label}
       </AppText>
@@ -48,6 +51,7 @@ export const TextField = forwardRef<TextInput, TextFieldProps>(function TextFiel
           textAlignVertical={multiline ? 'top' : 'center'}
           onFocus={(e) => {
             setFocused(true);
+            reveal?.(fieldRef.current);
             props.onFocus?.(e);
           }}
           onBlur={(e) => {

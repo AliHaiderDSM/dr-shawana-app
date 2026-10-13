@@ -1,7 +1,7 @@
 import { describe, expect, it } from '@jest/globals';
 import { MAX_UPLOAD_BYTES, normalizeType, validateFile } from '@/features/documents/file-rules';
 import { errorMessage, fieldErrors, isOffline } from './errors';
-import { isValidPhone } from './phone';
+import { isValidPhone, sanitizeCode, sanitizePhone } from './phone';
 
 describe('phone numbers', () => {
   it('accepts the formats patients type', () => {
@@ -9,6 +9,12 @@ describe('phone numbers', () => {
     expect(isValidPhone('+92 300 1234567')).toBe(true);
     expect(isValidPhone('3001234567')).toBe(true);
     expect(isValidPhone('12345')).toBe(false);
+  });
+
+  it('keeps only digits in the code and phone characters in the phone', () => {
+    expect(sanitizeCode('12a3-45 67')).toBe('123456');
+    expect(sanitizeCode('abc')).toBe('');
+    expect(sanitizePhone('+92 (300) 123-4567x')).toBe('+92 300 123-4567');
   });
 });
 

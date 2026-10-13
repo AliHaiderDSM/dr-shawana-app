@@ -1,7 +1,6 @@
-import type { ReactNode } from 'react';
+import { useRef, type ReactNode } from 'react';
 import {
   KeyboardAvoidingView,
-  Platform,
   RefreshControl,
   ScrollView,
   StyleSheet,
@@ -11,6 +10,7 @@ import {
 } from 'react-native';
 import { SafeAreaView, type Edge } from 'react-native-safe-area-context';
 import { colors, contentMaxWidth, space } from '@/theme/tokens';
+import { RevealContext, useKeyboardReveal } from './keyboard-reveal';
 
 interface ScreenProps {
   children: ReactNode;
@@ -33,12 +33,21 @@ export function Screen({
   footer,
   contentStyle,
 }: ScreenProps) {
+  const scrollRef = useRef<ScrollView>(null);
+  const { reveal, frameRef, frameTop, onFrameLayout, onScroll, onFooterLayout } = useKeyboardReveal(
+    scrollRef,
+    keyboard && scroll,
+  );
+
   const body = scroll ? (
     <ScrollView
+      ref={scrollRef}
       style={styles.flex}
       contentContainerStyle={[styles.content, contentStyle]}
       keyboardShouldPersistTaps="handled"
       keyboardDismissMode="interactive"
+      scrollEventThrottle={16}
+      onScroll={(event) => onScroll(event.nativeEvent.contentOffset.y)}
       refreshControl={
         onRefresh ? (
           <RefreshControl
@@ -62,7 +71,7 @@ export function Screen({
     <>
       {body}
       {footer ? (
-        <View style={styles.footer}>
+        <View style={styles.footer} onLayout={onFooterLayout}>
           <View style={styles.inner}>{footer}</View>
         </View>
       ) : null}
@@ -72,13 +81,13 @@ export function Screen({
   return (
     <SafeAreaView style={styles.root} edges={edges}>
       {keyboard ? (
-        <KeyboardAvoidingView
-          style={styles.flex}
-          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-          keyboardVerticalOffset={Platform.OS === 'ios' ? 64 : 0}
-        >
-          {content}
-        </KeyboardAvoidingView>
+        <RevealContext.Provider value={reveal}>
+          <View ref={frameRef} style={styles.flex} onLayout={onFrameLayout}>
+            <KeyboardAvoidingView style={styles.flex} behavior="padding" keyboardVerticalOffset={frameTop}>
+              {content}
+            </KeyboardAvoidingView>
+          </View>
+        </RevealContext.Provider>
       ) : (
         content
       )}
