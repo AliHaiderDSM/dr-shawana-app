@@ -6,6 +6,10 @@ import type { UploadableFile } from '@/types/api';
 
 export const MAX_UPLOAD_BYTES = 10 * 1024 * 1024;
 
+export const VOICE_TYPE = 'audio/mp4';
+
+export const IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp'] as const;
+
 export const UPLOAD_TYPES = ['application/pdf', 'image/jpeg', 'image/png', 'image/webp'] as const;
 
 const EXTENSION_TYPES: Record<string, string> = {
@@ -70,4 +74,10 @@ export async function pickImageFile(camera: boolean): Promise<UploadableFile | n
     mimeType: normalizeType(name, asset.mimeType ?? 'image/jpeg'),
     size: asset.fileSize ?? null,
   };
+}
+
+export function validateImage(file: UploadableFile) {
+  if (!(IMAGE_TYPES as readonly string[]).includes(file.mimeType))
+    return 'Choose a photo (JPG, PNG or WebP).';
+  return validateFile(file);
 }

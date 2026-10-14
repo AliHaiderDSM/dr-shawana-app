@@ -15,7 +15,12 @@ import { StatusBadge } from '@/components/ui/status-badge';
 import { errorMessage, fieldErrors } from '@/lib/errors';
 import { REQUEST_CATEGORY_LABELS, REQUEST_STATUS } from '@/lib/labels';
 import { colors, radius, space } from '@/theme/tokens';
-import { type ManagementRequest, REQUEST_CATEGORIES, type RequestCategory, useCreateRequestMutation } from '@/redux/features/management-requests';
+import {
+  type ManagementRequest,
+  REQUEST_CATEGORIES,
+  type RequestCategory,
+  useCreateRequestMutation,
+} from '@/redux/features/management-requests';
 
 const schema = z.object({
   category: z.enum(REQUEST_CATEGORIES, { message: 'Choose what your request is about' }),

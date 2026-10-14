@@ -32,7 +32,8 @@ export const chatApi = baseApi.injectEndpoints({
       providesTags: (_result, _error, doctorId) => [{ type: 'Message', id: `files-${doctorId}` }],
     }),
     getChatFileUrl: build.query<SignedUrl, { doctorId: string; messageId: string }>({
-      query: ({ doctorId, messageId }) => `${chatPath(doctorId)}/messages/${encodeURIComponent(messageId)}/file`,
+      query: ({ doctorId, messageId }) =>
+        `${chatPath(doctorId)}/messages/${encodeURIComponent(messageId)}/file`,
       transformResponse: unwrapData<SignedUrl>,
       keepUnusedDataFor: 0,
     }),

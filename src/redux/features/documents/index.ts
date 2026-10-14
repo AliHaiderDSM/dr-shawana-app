@@ -25,13 +25,7 @@ export const documentsApi = baseApi.injectEndpoints({
       }),
       transformResponse: unwrapData<MedicalDocument | null>,
       invalidatesTags: (_result, error) =>
-        error
-          ? []
-          : [
-              { type: 'Document', id: LIST },
-              { type: 'MedicalHistory', id: LIST },
-              'Overview',
-            ],
+        error ? [] : [{ type: 'Document', id: LIST }, { type: 'MedicalHistory', id: LIST }, 'Overview'],
     }),
   }),
 });

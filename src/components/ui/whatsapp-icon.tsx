@@ -2,7 +2,13 @@ import Svg, { G, Path } from 'react-native-svg';
 
 export function WhatsAppIcon({ size = 28, color = '#FFFFFF' }: { size?: number; color?: string }) {
   return (
-    <Svg width={size} height={size} viewBox="0 0 24 24" accessibilityElementsHidden importantForAccessibility="no">
+    <Svg
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      accessibilityElementsHidden
+      importantForAccessibility="no"
+    >
       <Path
         d="M12 2.4a9.6 9.6 0 0 0-8.24 14.53L2.4 21.6l4.82-1.3A9.6 9.6 0 1 0 12 2.4z"
         fill="none"

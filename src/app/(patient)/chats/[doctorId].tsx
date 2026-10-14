@@ -1,14 +1,16 @@
 import { router, Stack, useLocalSearchParams } from 'expo-router';
 import * as WebBrowser from 'expo-web-browser';
-import { FileImage, FileText, Paperclip, Send, X } from 'lucide-react-native';
-import { useEffect, useState } from 'react';
+import { FileImage, FileText, ImagePlus, Mic, Send, Trash2, X } from 'lucide-react-native';
+import { useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Alert, FlatList, Pressable, StyleSheet, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { VoiceNote } from '@/components/chat/voice-note';
 import { ErrorState } from '@/components/feedback/states';
 import { useKeyboardInset } from '@/hooks/use-keyboard-inset';
+import { MAX_VOICE_SECONDS, useVoiceRecorder } from '@/hooks/use-voice-recorder';
 import { AppText } from '@/components/ui/app-text';
 import { errorMessage } from '@/lib/errors';
-import { formatDate, formatTime } from '@/lib/format';
+import { formatDate, formatDuration, formatTime } from '@/lib/format';
 import { useAppDispatch } from '@/redux/hooks';
 import { colors, fontSize, icon, maxFontScale, radius, space, touch } from '@/theme/tokens';
 import {
@@ -21,7 +23,7 @@ import {
   useSendChatMessageMutation,
 } from '@/redux/features/chat';
 import type { UploadableFile } from '@/types/api';
-import { pickDocumentFile, pickImageFile, validateFile } from '@/utils/files';
+import { pickImageFile, validateImage } from '@/utils/files';
 
 const clock = (iso: string) => {
   const d = new Date(iso);
@@ -41,13 +43,16 @@ function Bubble({
   showDay,
   opening,
   onOpen,
+  loadUrl,
 }: {
   message: ChatMessage;
   showDay: boolean;
   opening: boolean;
   onOpen: (m: ChatMessage) => void;
+  loadUrl: (m: ChatMessage) => Promise<string>;
 }) {
   const mine = message.sender === 'patient';
+  const voice = message.file?.type.startsWith('audio/') ?? false;
   const FileIcon = message.file?.type.startsWith('image/') ? FileImage : FileText;
   const fg = mine ? colors.textInverse : colors.text;
   return (
@@ -63,9 +68,11 @@ function Bubble({
         <View
           style={[styles.bubble, mine ? styles.mine : styles.theirs]}
           accessible
-          accessibilityLabel={`${mine ? 'You' : 'Doctor'}: ${message.body ?? message.file?.name ?? ''}, ${clock(message.createdAt)}`}
+          accessibilityLabel={`${mine ? 'You' : 'Doctor'}: ${message.body ?? (voice ? 'Voice message' : (message.file?.name ?? ''))}, ${clock(message.createdAt)}`}
         >
-          {message.file ? (
+          {voice ? (
+            <VoiceNote mine={mine} load={() => loadUrl(message)} />
+          ) : message.file ? (
             <Pressable
               accessibilityRole="button"
               accessibilityLabel={`Open ${message.file.name}`}
@@ -102,7 +109,11 @@ export default function ChatScreen() {
     selectFromResult: ({ data }) => ({ data: data?.find((d) => d.doctorId === doctorId) }),
   }).data;
   const title = doctor?.name || name || 'Your doctor';
-  const initial = title.replace(/^dr\.?\s*/i, '').charAt(0).toUpperCase() || 'D';
+  const initial =
+    title
+      .replace(/^dr\.?\s*/i, '')
+      .charAt(0)
+      .toUpperCase() || 'D';
   const latest = useGetChatMessagesQuery(
     { doctorId },
     {
@@ -121,6 +132,8 @@ export default function ChatScreen() {
   const [file, setFile] = useState<UploadableFile | null>(null);
   const [openingId, setOpeningId] = useState<string | null>(null);
   const { frame, inset } = useKeyboardInset();
+  const voice = useVoiceRecorder();
+  const finishing = useRef(false);
 
   const seenAt = latest.data ? (latest.data.items.at(-1)?.id ?? 'empty') : null;
   useEffect(() => {
@@ -133,6 +146,7 @@ export default function ChatScreen() {
   const newestFirst = [...messages].reverse();
   const hasMore = moreOlder ?? latest.data?.hasMore ?? false;
   const sending = sendState.isLoading;
+  const canSend = Boolean(text.trim() || file);
 
   const fetchOlder = async () => {
     const first = messages[0];
@@ -146,16 +160,20 @@ export default function ChatScreen() {
   };
 
   const attach = () =>
-    Alert.alert('Send a file', 'A photo of a report or a PDF, up to 10 MB.', [
-      { text: 'Photo', onPress: () => void pickImageFile(false).then(choose) },
-      { text: 'Camera', onPress: () => void pickImageFile(true).then(choose) },
-      { text: 'PDF or file', onPress: () => void pickDocumentFile().then(choose) },
-      { text: 'Cancel', style: 'cancel' },
-    ]);
+    Alert.alert(
+      'Send a photo',
+      'A photo of a report, up to 10 MB.',
+      [
+        { text: 'Gallery', onPress: () => void pickImageFile(false).then(choose) },
+        { text: 'Camera', onPress: () => void pickImageFile(true).then(choose) },
+        { text: 'Cancel', style: 'cancel' },
+      ],
+      { cancelable: true },
+    );
 
   function choose(picked: UploadableFile | null) {
     if (!picked) return;
-    const problem = validateFile(picked);
+    const problem = validateImage(picked);
     if (problem) Alert.alert('Cannot send this file', problem);
     else setFile(picked);
   }
@@ -171,6 +189,31 @@ export default function ChatScreen() {
       Alert.alert('Message not sent', errorMessage(error));
     }
   };
+
+  const sendVoice = async () => {
+    if (finishing.current) return;
+    finishing.current = true;
+    const recorded = await voice.finish().finally(() => {
+      finishing.current = false;
+    });
+    if (!recorded) {
+      Alert.alert('Too short', 'Hold on a little longer and speak, then press send.');
+      return;
+    }
+    try {
+      await sendMessage({ doctorId, body: '', file: recorded }).unwrap();
+    } catch (error) {
+      Alert.alert('Voice message not sent', errorMessage(error));
+    }
+  };
+
+  const reachedLimit = voice.recording && voice.seconds >= MAX_VOICE_SECONDS;
+  useEffect(() => {
+    if (reachedLimit) void sendVoice();
+  });
+
+  const loadUrl = async (message: ChatMessage) =>
+    (await getFileUrl({ doctorId, messageId: message.id }).unwrap()).url;
 
   const open = async (message: ChatMessage) => {
     if (openingId) return;
@@ -240,6 +283,7 @@ export default function ChatScreen() {
                   showDay={!olderItem || dayOf(olderItem.createdAt) !== dayOf(item.createdAt)}
                   opening={openingId === item.id}
                   onOpen={(m) => void open(m)}
+                  loadUrl={loadUrl}
                 />
               );
             }}
@@ -269,7 +313,7 @@ export default function ChatScreen() {
         <View style={styles.composer}>
           {file ? (
             <View style={styles.pending}>
-              <Paperclip size={icon.sm} color={colors.textMuted} />
+              <ImagePlus size={icon.sm} color={colors.textMuted} />
               <AppText variant="label" numberOfLines={1} style={styles.flex}>
                 {file.name}
               </AppText>
@@ -287,42 +331,83 @@ export default function ChatScreen() {
               )}
             </View>
           ) : null}
-          <View style={styles.inputRow}>
-            <Pressable
-              accessibilityRole="button"
-              accessibilityLabel="Attach a photo or PDF"
-              onPress={attach}
-              disabled={sending}
-              style={styles.iconButton}
-            >
-              <Paperclip size={icon.lg} color={colors.textMuted} />
-            </Pressable>
-            <TextInput
-              value={text}
-              onChangeText={setText}
-              placeholder="Write a message"
-              placeholderTextColor={colors.textMuted}
-              multiline
-              maxLength={4000}
-              maxFontSizeMultiplier={maxFontScale}
-              accessibilityLabel="Message"
-              style={styles.input}
-            />
-            <Pressable
-              accessibilityRole="button"
-              accessibilityLabel="Send"
-              accessibilityState={{ disabled: sending || (!text.trim() && !file), busy: sending }}
-              onPress={() => void send()}
-              disabled={sending || (!text.trim() && !file)}
-              style={[styles.send, (sending || (!text.trim() && !file)) && styles.sendOff]}
-            >
-              {sending ? (
-                <ActivityIndicator color={colors.textInverse} />
-              ) : (
+          {voice.recording ? (
+            <View style={styles.inputRow}>
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel="Delete the recording"
+                onPress={() => void voice.cancel()}
+                style={styles.iconButton}
+              >
+                <Trash2 size={icon.lg} color={colors.danger} />
+              </Pressable>
+              <View style={styles.recordingBar} accessibilityLiveRegion="polite">
+                <View style={styles.recDot} />
+                <AppText weight="semibold" style={styles.flex}>
+                  Recording {formatDuration(voice.seconds)}
+                </AppText>
+                <AppText variant="caption" tone="muted">
+                  max {formatDuration(MAX_VOICE_SECONDS)}
+                </AppText>
+              </View>
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel="Send voice message"
+                onPress={() => void sendVoice()}
+                style={styles.send}
+              >
                 <Send size={icon.md} color={colors.textInverse} />
+              </Pressable>
+            </View>
+          ) : (
+            <View style={styles.inputRow}>
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel="Attach a photo"
+                onPress={attach}
+                disabled={sending}
+                style={styles.iconButton}
+              >
+                <ImagePlus size={icon.lg} color={colors.textMuted} />
+              </Pressable>
+              <TextInput
+                value={text}
+                onChangeText={setText}
+                placeholder="Write a message"
+                placeholderTextColor={colors.textMuted}
+                multiline
+                maxLength={4000}
+                maxFontSizeMultiplier={maxFontScale}
+                accessibilityLabel="Message"
+                style={styles.input}
+              />
+              {canSend || sending ? (
+                <Pressable
+                  accessibilityRole="button"
+                  accessibilityLabel="Send"
+                  accessibilityState={{ disabled: sending, busy: sending }}
+                  onPress={() => void send()}
+                  disabled={sending}
+                  style={[styles.send, sending && styles.sendOff]}
+                >
+                  {sending ? (
+                    <ActivityIndicator color={colors.textInverse} />
+                  ) : (
+                    <Send size={icon.md} color={colors.textInverse} />
+                  )}
+                </Pressable>
+              ) : (
+                <Pressable
+                  accessibilityRole="button"
+                  accessibilityLabel="Record a voice message"
+                  onPress={() => void voice.start()}
+                  style={styles.send}
+                >
+                  <Mic size={icon.md} color={colors.textInverse} />
+                </Pressable>
               )}
-            </Pressable>
-          </View>
+            </View>
+          )}
         </View>
       </View>
     </SafeAreaView>
@@ -428,4 +513,15 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   sendOff: { opacity: 0.5 },
+  recordingBar: {
+    flex: 1,
+    minHeight: touch.iconButton,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: space.sm,
+    paddingHorizontal: space.md,
+    borderRadius: radius.lg,
+    backgroundColor: colors.dangerSoft,
+  },
+  recDot: { width: 10, height: 10, borderRadius: radius.pill, backgroundColor: colors.danger },
 });

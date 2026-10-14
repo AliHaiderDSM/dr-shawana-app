@@ -116,7 +116,11 @@ export function UploadPanel() {
             editable={!busy}
           />
           {busy ? (
-            <View style={styles.progressWrap} accessibilityRole="progressbar" accessibilityState={{ busy: true }}>
+            <View
+              style={styles.progressWrap}
+              accessibilityRole="progressbar"
+              accessibilityState={{ busy: true }}
+            >
               <View style={styles.uploading}>
                 <ActivityIndicator color={colors.primary} />
                 <AppText variant="caption" tone="muted">

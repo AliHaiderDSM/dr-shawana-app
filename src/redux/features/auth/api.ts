@@ -12,4 +12,3 @@ export const authApi = baseApi.injectEndpoints({
     }),
   }),
 });
-

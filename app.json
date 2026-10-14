@@ -55,6 +55,12 @@
           "color": "#0B6E66",
           "defaultChannel": "messages"
         }
+      ],
+      [
+        "expo-audio",
+        {
+          "microphonePermission": "DSM Clinic uses the microphone only when you record a voice message for your doctor."
+        }
       ]
     ]
   }

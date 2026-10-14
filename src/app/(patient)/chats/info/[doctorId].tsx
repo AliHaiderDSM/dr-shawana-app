@@ -11,7 +11,12 @@ import { useRefresh } from '@/hooks/use-refresh';
 import { errorMessage } from '@/lib/errors';
 import { formatDate, formatSize, initials } from '@/lib/format';
 import { colors, icon, radius, space, touch } from '@/theme/tokens';
-import { type ChatMessage, useGetChatDoctorsQuery, useGetChatFilesQuery, useLazyGetChatFileUrlQuery } from '@/redux/features/chat';
+import {
+  type ChatMessage,
+  useGetChatDoctorsQuery,
+  useGetChatFilesQuery,
+  useLazyGetChatFileUrlQuery,
+} from '@/redux/features/chat';
 
 export default function DoctorInfoScreen() {
   const { doctorId = '', name } = useLocalSearchParams<{ doctorId: string; name?: string }>();

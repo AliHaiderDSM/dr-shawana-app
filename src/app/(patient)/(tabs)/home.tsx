@@ -115,13 +115,19 @@ export default function HomeScreen() {
 
         <View style={styles.stats}>
           <Stat label="Visits" value={o?.counts.appointments} onPress={() => router.push('/history')} />
-          <Stat label="Prescriptions" value={o?.counts.prescriptions} onPress={() => router.push('/prescriptions')} />
+          <Stat
+            label="Prescriptions"
+            value={o?.counts.prescriptions}
+            onPress={() => router.push('/prescriptions')}
+          />
           <Stat label="New messages" value={o ? unread : undefined} onPress={() => router.push('/chats')} />
         </View>
 
         <Pressable
           accessibilityRole="button"
-          accessibilityLabel={unread > 0 ? `Read ${unread} new messages from your doctor` : 'Message your doctor'}
+          accessibilityLabel={
+            unread > 0 ? `Read ${unread} new messages from your doctor` : 'Message your doctor'
+          }
           onPress={() => router.push('/chats')}
           style={({ pressed }) => [styles.heroCta, pressed && styles.heroCtaPressed]}
         >
@@ -129,7 +135,9 @@ export default function HomeScreen() {
             <WhatsAppIcon size={22} color={colors.textInverse} />
           </View>
           <View style={styles.flex}>
-            <AppText weight="semibold">{unread > 0 ? 'You have new messages' : 'Message your doctor'}</AppText>
+            <AppText weight="semibold">
+              {unread > 0 ? 'You have new messages' : 'Message your doctor'}
+            </AppText>
             <AppText variant="caption" tone="muted" numberOfLines={1}>
               Ask questions and send photos of your reports
             </AppText>

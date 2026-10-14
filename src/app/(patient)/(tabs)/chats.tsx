@@ -12,7 +12,10 @@ import { colors, radius, space } from '@/theme/tokens';
 import { useGetChatDoctorsQuery } from '@/redux/features/chat';
 
 export default function ChatsScreen() {
-  const doctors = useGetChatDoctorsQuery(undefined, { pollingInterval: 15_000, skipPollingIfUnfocused: true });
+  const doctors = useGetChatDoctorsQuery(undefined, {
+    pollingInterval: 15_000,
+    skipPollingIfUnfocused: true,
+  });
   const { refreshing, onRefresh } = useRefresh(doctors.refetch);
 
   return (

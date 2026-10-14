@@ -26,7 +26,9 @@ export function completeSignIn(session: Session) {
 export function signOut(notice?: string) {
   return async (dispatch: AppDispatch) => {
     const request = dispatch(authApi.endpoints.logout.initiate());
-    await Promise.race([request, new Promise((resolve) => setTimeout(resolve, 4_000))]).catch(() => undefined);
+    await Promise.race([request, new Promise((resolve) => setTimeout(resolve, 4_000))]).catch(
+      () => undefined,
+    );
     await sessionStorage.clear();
     dispatch(signedOut(notice ? { notice } : undefined));
     dispatch(baseApi.util.resetApiState());

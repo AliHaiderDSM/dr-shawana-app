@@ -17,7 +17,8 @@ export const managementRequestsApi = baseApi.injectEndpoints({
     createRequest: build.mutation<ManagementRequest, NewRequestInput>({
       query: (body) => ({ url: '/patient/requests', method: 'POST', body }),
       transformResponse: unwrapData<ManagementRequest>,
-      invalidatesTags: (_result, error) => (error ? [] : [{ type: 'ManagementRequest', id: LIST }, 'Overview']),
+      invalidatesTags: (_result, error) =>
+        error ? [] : [{ type: 'ManagementRequest', id: LIST }, 'Overview'],
     }),
   }),
 });
