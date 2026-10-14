@@ -4,9 +4,9 @@ import { ActivityIndicator, StyleSheet, View } from 'react-native';
 import { AppText } from '@/components/ui/app-text';
 import { Button } from '@/components/ui/button';
 import { Screen } from '@/components/ui/screen';
-import { restoreSession, signOut } from '@/features/auth/auth-actions';
-import { useAppDispatch, useAppSelector } from '@/store';
+import { useAppDispatch, useAppSelector } from '@/redux/hooks';
 import { colors, radius, space } from '@/theme/tokens';
+import { restoreSession, signOut } from '@/redux/features/auth';
 
 export default function Index() {
   const dispatch = useAppDispatch();

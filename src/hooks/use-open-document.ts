@@ -2,12 +2,11 @@ import * as WebBrowser from 'expo-web-browser';
 import { useState } from 'react';
 import { Alert } from 'react-native';
 import { errorMessage, errorStatus } from '@/lib/errors';
-import { useDocumentUrlMutation } from '@/services/api/patient-api';
 import { colors } from '@/theme/tokens';
-import type { DocumentFile } from '@/types/api';
+import { type DocumentFile, useLazyGetDocumentUrlQuery } from '@/redux/features/documents';
 
 export function useOpenDocument() {
-  const [getUrl] = useDocumentUrlMutation();
+  const [getUrl] = useLazyGetDocumentUrlQuery();
   const [openingId, setOpeningId] = useState<string | null>(null);
 
   const open = async (file: DocumentFile) => {

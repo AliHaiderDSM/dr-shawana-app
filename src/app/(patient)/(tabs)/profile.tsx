@@ -18,16 +18,16 @@ import { Avatar, confirm, InfoRow, SectionHeader } from '@/components/ui/bits';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Screen } from '@/components/ui/screen';
-import { signOut } from '@/features/auth/auth-actions';
 import { useRefresh } from '@/hooks/use-refresh';
 import { formatDate, initials } from '@/lib/format';
-import { useMeQuery } from '@/services/api/patient-api';
-import { useAppDispatch } from '@/store';
+import { useAppDispatch } from '@/redux/hooks';
 import { colors, radius, space, touch } from '@/theme/tokens';
+import { useGetMeQuery } from '@/redux/features/patient';
+import { signOut } from '@/redux/features/auth';
 
 export default function ProfileScreen() {
   const dispatch = useAppDispatch();
-  const me = useMeQuery();
+  const me = useGetMeQuery();
   const { refreshing, onRefresh } = useRefresh(me.refetch);
   const [leaving, setLeaving] = useState(false);
   const p = me.data;
@@ -79,12 +79,6 @@ export default function ProfileScreen() {
             ) : null}
             <InfoRow icon={MapPin} label="City" value={[p.city, p.country].filter(Boolean).join(', ')} />
           </Card>
-          <Button
-            label="Edit my details"
-            icon={Pencil}
-            variant="secondary"
-            onPress={() => router.push('/profile-edit')}
-          />
 
           {p.clinic ? (
             <>

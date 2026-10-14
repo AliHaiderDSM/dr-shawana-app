@@ -1,16 +1,15 @@
 import { configureStore } from '@reduxjs/toolkit';
 import { setupListeners } from '@reduxjs/toolkit/query';
 import { AppState } from 'react-native';
-import { useDispatch, useSelector } from 'react-redux';
-import { authReducer } from '@/features/auth/auth-slice';
-import { api } from '@/services/api/base-api';
+import { baseApi } from './api/baseApi';
+import { authReducer } from './features/auth/authSlice';
 
 export const store = configureStore({
   reducer: {
     auth: authReducer,
-    [api.reducerPath]: api.reducer,
+    [baseApi.reducerPath]: baseApi.reducer,
   },
-  middleware: (getDefault) => getDefault().concat(api.middleware),
+  middleware: (getDefault) => getDefault().concat(baseApi.middleware),
 });
 
 setupListeners(store.dispatch, (dispatch, actions) => {
@@ -23,6 +22,3 @@ setupListeners(store.dispatch, (dispatch, actions) => {
 
 export type RootState = ReturnType<typeof store.getState>;
 export type AppDispatch = typeof store.dispatch;
-
-export const useAppDispatch = useDispatch.withTypes<AppDispatch>();
-export const useAppSelector = useSelector.withTypes<RootState>();

@@ -25,6 +25,9 @@ export const colors = {
   neutralSoft: '#EEF0F1',
   overlay: 'rgba(15, 31, 36, 0.45)',
   skeleton: '#E3E9EA',
+  whatsapp: '#25D366',
+  whatsappPressed: '#1DA851',
+  heroAccent: 'rgba(255, 255, 255, 0.08)',
 } as const;
 
 export const space = {

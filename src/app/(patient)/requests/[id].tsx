@@ -10,12 +10,12 @@ import { StatusBadge } from '@/components/ui/status-badge';
 import { useRefresh } from '@/hooks/use-refresh';
 import { formatDateTime } from '@/lib/format';
 import { REQUEST_CATEGORY_LABELS, REQUEST_STATUS } from '@/lib/labels';
-import { useRequestQuery } from '@/services/api/patient-api';
 import { colors, radius, space } from '@/theme/tokens';
+import { useGetRequestQuery } from '@/redux/features/management-requests';
 
 export default function RequestDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
-  const request = useRequestQuery(id ?? '', { skip: !id, pollingInterval: 60_000 });
+  const request = useGetRequestQuery(id ?? '', { skip: !id, pollingInterval: 60_000 });
   const { refreshing, onRefresh } = useRefresh(request.refetch);
   const r = request.data;
 

@@ -1,9 +1,10 @@
 import { Tabs } from 'expo-router';
-import { History, House, MessageCircle, Pill, UserRound } from 'lucide-react-native';
+import { History, House, Pill, UserRound } from 'lucide-react-native';
 import { Pressable, StyleSheet, View } from 'react-native';
 import { AppText } from '@/components/ui/app-text';
-import { useChatUnreadQuery } from '@/services/api/patient-api';
+import { WhatsAppIcon } from '@/components/ui/whatsapp-icon';
 import { colors, fontSize, radius, shadow, space } from '@/theme/tokens';
+import { useGetChatUnreadQuery } from '@/redux/features/chat';
 
 function MessagesButton({
   onPress,
@@ -26,7 +27,7 @@ function MessagesButton({
       {({ pressed }) => (
         <>
           <View style={[styles.center, pressed && styles.centerPressed]}>
-            <MessageCircle size={26} color={colors.textInverse} />
+            <WhatsAppIcon size={28} color={colors.textInverse} />
             {unread > 0 ? (
               <View style={styles.badge}>
                 <AppText variant="caption" weight="bold" style={styles.badgeText}>
@@ -45,7 +46,7 @@ function MessagesButton({
 }
 
 export default function TabsLayout() {
-  const unread = useChatUnreadQuery(undefined, { pollingInterval: 30_000 }).data?.unread ?? 0;
+  const unread = useGetChatUnreadQuery(undefined, { pollingInterval: 30_000 }).data?.unread ?? 0;
   return (
     <Tabs
       screenOptions={{
@@ -115,14 +116,14 @@ const styles = StyleSheet.create({
     height: 54,
     marginTop: -20,
     borderRadius: radius.pill,
-    backgroundColor: colors.primary,
+    backgroundColor: colors.whatsapp,
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 4,
     borderColor: colors.surface,
     ...shadow,
   },
-  centerPressed: { backgroundColor: colors.primaryPressed },
+  centerPressed: { backgroundColor: colors.whatsappPressed },
   badge: {
     position: 'absolute',
     top: -6,

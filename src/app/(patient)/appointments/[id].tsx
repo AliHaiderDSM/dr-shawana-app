@@ -22,12 +22,12 @@ import { useOpenDocument } from '@/hooks/use-open-document';
 import { useRefresh } from '@/hooks/use-refresh';
 import { formatDay, formatTime } from '@/lib/format';
 import { MODE_LABELS, VISIT_LABELS, appointmentStatus } from '@/lib/labels';
-import { useAppointmentQuery } from '@/services/api/patient-api';
 import { space } from '@/theme/tokens';
+import { useGetAppointmentQuery } from '@/redux/features/appointments';
 
 export default function AppointmentDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
-  const appointment = useAppointmentQuery(id ?? '', { skip: !id });
+  const appointment = useGetAppointmentQuery(id ?? '', { skip: !id });
   const { refreshing, onRefresh } = useRefresh(appointment.refetch);
   const { open, openingId } = useOpenDocument();
   const a = appointment.data;

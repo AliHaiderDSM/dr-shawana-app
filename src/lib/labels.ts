@@ -9,7 +9,8 @@ import {
   type LucideIcon,
 } from 'lucide-react-native';
 import type { BadgeTone } from '@/components/ui/status-badge';
-import type { Appointment, RequestCategory, RequestStatus } from '@/types/api';
+import { type Appointment } from '@/redux/features/appointments';
+import { type RequestCategory, type RequestStatus } from '@/redux/features/management-requests';
 
 interface StatusLook {
   label: string;

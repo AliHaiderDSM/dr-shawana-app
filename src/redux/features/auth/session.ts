@@ -1,9 +1,9 @@
-import { api, refreshSession } from '@/services/api/base-api';
-import { patientApi } from '@/services/api/patient-api';
-import type { AppDispatch } from '@/store';
-import type { Session } from '@/types/api';
-import { restoring, signedIn, signedOut, unreachable } from './auth-slice';
-import { sessionStorage } from './session-storage';
+import { baseApi, refreshSession } from '../../api/baseApi';
+import type { AppDispatch } from '../../store';
+import { authApi } from './api';
+import { restoring, signedIn, signedOut, unreachable } from './authSlice';
+import { sessionStorage } from './storage';
+import type { Session } from './types';
 
 export function restoreSession() {
   return async (dispatch: AppDispatch) => {
@@ -17,7 +17,7 @@ export function restoreSession() {
 
 export function completeSignIn(session: Session) {
   return async (dispatch: AppDispatch) => {
-    dispatch(api.util.resetApiState());
+    dispatch(baseApi.util.resetApiState());
     await sessionStorage.setRefreshToken(session.refreshToken);
     dispatch(signedIn({ accessToken: session.accessToken }));
   };
@@ -25,12 +25,10 @@ export function completeSignIn(session: Session) {
 
 export function signOut(notice?: string) {
   return async (dispatch: AppDispatch) => {
-    const request = dispatch(patientApi.endpoints.logout.initiate());
-    await Promise.race([request, new Promise((resolve) => setTimeout(resolve, 4_000))]).catch(
-      () => undefined,
-    );
+    const request = dispatch(authApi.endpoints.logout.initiate());
+    await Promise.race([request, new Promise((resolve) => setTimeout(resolve, 4_000))]).catch(() => undefined);
     await sessionStorage.clear();
     dispatch(signedOut(notice ? { notice } : undefined));
-    dispatch(api.util.resetApiState());
+    dispatch(baseApi.util.resetApiState());
   };
 }

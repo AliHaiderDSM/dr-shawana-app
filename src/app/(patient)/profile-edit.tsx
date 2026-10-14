@@ -11,8 +11,7 @@ import { Button } from '@/components/ui/button';
 import { FormField } from '@/components/ui/form-field';
 import { Screen } from '@/components/ui/screen';
 import { errorMessage } from '@/lib/errors';
-import { useMeQuery, useUpdateMeMutation } from '@/services/api/patient-api';
-import type { PatientProfile } from '@/types/api';
+import { type PatientProfile, useGetMeQuery, useUpdateMeMutation } from '@/redux/features/patient';
 
 const toIso = (value: string) => {
   const m = value.trim().match(/^(\d{1,2})[/.-](\d{1,2})[/.-](\d{4})$/);
@@ -113,7 +112,7 @@ function EditForm({ profile }: { profile: PatientProfile }) {
 }
 
 export default function ProfileEditScreen() {
-  const me = useMeQuery();
+  const me = useGetMeQuery();
   if (me.isLoading) {
     return (
       <Screen>

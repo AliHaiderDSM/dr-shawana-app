@@ -3,9 +3,10 @@ import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { Provider } from 'react-redux';
-import { restoreSession } from '@/features/auth/auth-actions';
-import { store, useAppDispatch, useAppSelector } from '@/store';
+import { useAppDispatch, useAppSelector } from '@/redux/hooks';
+import { store } from '@/redux/store';
 import { colors } from '@/theme/tokens';
+import { restoreSession } from '@/redux/features/auth';
 
 function Navigator() {
   const dispatch = useAppDispatch();

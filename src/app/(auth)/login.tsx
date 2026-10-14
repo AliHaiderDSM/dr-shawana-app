@@ -7,14 +7,12 @@ import { Notice } from '@/components/ui/bits';
 import { Button } from '@/components/ui/button';
 import { FormField } from '@/components/ui/form-field';
 import { Screen } from '@/components/ui/screen';
-import { completeSignIn } from '@/features/auth/auth-actions';
-import { noticeSeen } from '@/features/auth/auth-slice';
-import { DEVICE, loginSchema, type LoginValues } from '@/features/auth/schemas';
+import { DEVICE, loginSchema, type LoginValues } from '@/utils/login';
 import { errorMessage } from '@/lib/errors';
 import { sanitizeCode, sanitizePhone } from '@/lib/phone';
-import { useLoginMutation } from '@/services/api/patient-api';
-import { useAppDispatch, useAppSelector } from '@/store';
+import { useAppDispatch, useAppSelector } from '@/redux/hooks';
 import { colors, radius, space } from '@/theme/tokens';
+import { completeSignIn, noticeSeen, useLoginMutation } from '@/redux/features/auth';
 
 export default function LoginScreen() {
   const dispatch = useAppDispatch();

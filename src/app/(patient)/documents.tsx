@@ -2,13 +2,13 @@ import { FileText } from 'lucide-react-native';
 import { EmptyState } from '@/components/feedback/states';
 import { DocumentCard } from '@/components/medical/cards';
 import { ListScreen } from '@/components/ui/list-screen';
-import { UploadPanel } from '@/features/documents/upload-panel';
+import { UploadPanel } from '@/components/forms/upload-panel';
 import { useOpenDocument } from '@/hooks/use-open-document';
 import { useRefresh } from '@/hooks/use-refresh';
-import { useDocumentsQuery } from '@/services/api/patient-api';
+import { useGetDocumentsQuery } from '@/redux/features/documents';
 
 export default function DocumentsScreen() {
-  const documents = useDocumentsQuery();
+  const documents = useGetDocumentsQuery();
   const { refreshing, onRefresh } = useRefresh(documents.refetch);
   const { open, openingId } = useOpenDocument();
 

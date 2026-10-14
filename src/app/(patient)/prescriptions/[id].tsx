@@ -11,9 +11,8 @@ import { StatusBadge } from '@/components/ui/status-badge';
 import { useRefresh } from '@/hooks/use-refresh';
 import { formatDate, htmlToText } from '@/lib/format';
 import { PRESCRIPTION_CATEGORY_LABELS } from '@/lib/labels';
-import { usePrescriptionQuery } from '@/services/api/patient-api';
 import { colors, space } from '@/theme/tokens';
-import type { PrescriptionItem } from '@/types/api';
+import { type PrescriptionItem, useGetPrescriptionQuery } from '@/redux/features/prescriptions';
 
 function groupItems(items: PrescriptionItem[]) {
   const groups = new Map<string, PrescriptionItem[]>();
@@ -26,7 +25,7 @@ function groupItems(items: PrescriptionItem[]) {
 
 export default function PrescriptionDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
-  const prescription = usePrescriptionQuery(id ?? '', { skip: !id });
+  const prescription = useGetPrescriptionQuery(id ?? '', { skip: !id });
   const { refreshing, onRefresh } = useRefresh(prescription.refetch);
   const p = prescription.data;
 

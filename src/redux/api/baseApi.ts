@@ -5,10 +5,12 @@ import {
   type FetchArgs,
   type FetchBaseQueryError,
 } from '@reduxjs/toolkit/query/react';
-import { signedOut, tokenRefreshed } from '@/features/auth/auth-slice';
-import { sessionStorage } from '@/features/auth/session-storage';
+import { signedOut, tokenRefreshed } from '../features/auth/authSlice';
+import { sessionStorage } from '../features/auth/storage';
 import { API_URL } from '@/lib/config';
-import type { Envelope, Session } from '@/types/api';
+import type { Envelope } from '@/types/api';
+import type { Session } from '../features/auth/types';
+import { TAG_TYPES } from './tagTypes';
 
 interface AuthRoot {
   auth: { accessToken: string | null };
@@ -82,24 +84,15 @@ const baseQueryWithReauth: BaseQueryFn<string | FetchArgs, unknown, FetchBaseQue
   if (refreshed.kind === 'expired') {
     await sessionStorage.clear();
     queryApi.dispatch(signedOut({ notice: SESSION_ENDED }));
-    queryApi.dispatch(api.util.resetApiState());
+    queryApi.dispatch(baseApi.util.resetApiState());
   }
   return result;
 };
 
-export const api = createApi({
+export const baseApi = createApi({
   reducerPath: 'api',
   baseQuery: baseQueryWithReauth,
-  tagTypes: [
-    'Profile',
-    'Overview',
-    'Appointments',
-    'History',
-    'Prescriptions',
-    'Documents',
-    'Requests',
-    'Chats',
-  ],
+  tagTypes: TAG_TYPES,
   refetchOnReconnect: true,
   endpoints: () => ({}),
 });

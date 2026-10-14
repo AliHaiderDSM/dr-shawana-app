@@ -10,17 +10,19 @@ import { ListScreen } from '@/components/ui/list-screen';
 import { useRefresh } from '@/hooks/use-refresh';
 import { errorMessage } from '@/lib/errors';
 import { formatDate, formatSize, initials } from '@/lib/format';
-import { useChatFileUrlMutation, useChatFilesQuery } from '@/services/api/patient-api';
 import { colors, icon, radius, space, touch } from '@/theme/tokens';
-import type { ChatMessage } from '@/types/api';
+import { type ChatMessage, useGetChatDoctorsQuery, useGetChatFilesQuery, useLazyGetChatFileUrlQuery } from '@/redux/features/chat';
 
 export default function DoctorInfoScreen() {
   const { doctorId = '', name } = useLocalSearchParams<{ doctorId: string; name?: string }>();
-  const files = useChatFilesQuery(doctorId, { skip: !doctorId, refetchOnMountOrArgChange: true });
+  const files = useGetChatFilesQuery(doctorId, { skip: !doctorId, refetchOnMountOrArgChange: true });
   const { refreshing, onRefresh } = useRefresh(files.refetch);
-  const [getUrl] = useChatFileUrlMutation();
+  const [getUrl] = useLazyGetChatFileUrlQuery();
   const [openingId, setOpeningId] = useState<string | null>(null);
-  const doctorName = name || 'Your doctor';
+  const doctor = useGetChatDoctorsQuery(undefined, {
+    selectFromResult: ({ data }) => ({ data: data?.find((d) => d.doctorId === doctorId) }),
+  }).data;
+  const doctorName = doctor?.name || name || 'Your doctor';
 
   const open = async (message: ChatMessage) => {
     if (openingId) return;
@@ -56,6 +58,16 @@ export default function DoctorInfoScreen() {
             <AppText variant="heading" center accessibilityRole="header">
               {doctorName}
             </AppText>
+            {doctor?.details ? (
+              <AppText tone="muted" center>
+                {doctor.details}
+              </AppText>
+            ) : null}
+            {doctor?.lastVisit ? (
+              <AppText variant="caption" tone="muted" center>
+                Last visit {formatDate(doctor.lastVisit)}
+              </AppText>
+            ) : null}
           </View>
           <AppText variant="subheading">Shared files{files.data ? ` (${files.data.length})` : ''}</AppText>
           <AppText variant="label" tone="muted">

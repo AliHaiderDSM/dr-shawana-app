@@ -7,23 +7,21 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { ErrorState } from '@/components/feedback/states';
 import { useKeyboardInset } from '@/hooks/use-keyboard-inset';
 import { AppText } from '@/components/ui/app-text';
-import { signOut } from '@/features/auth/auth-actions';
-import { tokenRefreshed } from '@/features/auth/auth-slice';
-import { validateFile, type PickedFile } from '@/features/documents/file-rules';
-import { pickDocumentFile, pickImageFile } from '@/features/documents/pickers';
-import { uploadFile } from '@/features/documents/upload';
 import { errorMessage } from '@/lib/errors';
 import { formatDate, formatTime } from '@/lib/format';
-import {
-  useChatFileUrlMutation,
-  useChatMessagesQuery,
-  useLazyChatMessagesQuery,
-  useSendChatMessageMutation,
-} from '@/services/api/patient-api';
-import { api } from '@/services/api/base-api';
-import { useAppDispatch, useAppSelector } from '@/store';
+import { useAppDispatch } from '@/redux/hooks';
 import { colors, fontSize, icon, maxFontScale, radius, space, touch } from '@/theme/tokens';
-import type { ChatMessage } from '@/types/api';
+import {
+  markChatsSeen,
+  type ChatMessage,
+  useGetChatDoctorsQuery,
+  useGetChatMessagesQuery,
+  useLazyGetChatFileUrlQuery,
+  useLazyGetChatMessagesQuery,
+  useSendChatMessageMutation,
+} from '@/redux/features/chat';
+import type { UploadableFile } from '@/types/api';
+import { pickDocumentFile, pickImageFile, validateFile } from '@/utils/files';
 
 const clock = (iso: string) => {
   const d = new Date(iso);
@@ -100,8 +98,12 @@ function Bubble({
 export default function ChatScreen() {
   const { doctorId = '', name } = useLocalSearchParams<{ doctorId: string; name?: string }>();
   const dispatch = useAppDispatch();
-  const accessToken = useAppSelector((s) => s.auth.accessToken);
-  const latest = useChatMessagesQuery(
+  const doctor = useGetChatDoctorsQuery(undefined, {
+    selectFromResult: ({ data }) => ({ data: data?.find((d) => d.doctorId === doctorId) }),
+  }).data;
+  const title = doctor?.name || name || 'Your doctor';
+  const initial = title.replace(/^dr\.?\s*/i, '').charAt(0).toUpperCase() || 'D';
+  const latest = useGetChatMessagesQuery(
     { doctorId },
     {
       skip: !doctorId,
@@ -110,33 +112,27 @@ export default function ChatScreen() {
       refetchOnMountOrArgChange: true,
     },
   );
-  const [loadOlder, olderState] = useLazyChatMessagesQuery();
-  const [sendText, sendState] = useSendChatMessageMutation();
-  const [getFileUrl] = useChatFileUrlMutation();
+  const [loadOlder, olderState] = useLazyGetChatMessagesQuery();
+  const [sendMessage, sendState] = useSendChatMessageMutation();
+  const [getFileUrl] = useLazyGetChatFileUrlQuery();
   const [older, setOlder] = useState<ChatMessage[]>([]);
   const [moreOlder, setMoreOlder] = useState<boolean | null>(null);
   const [text, setText] = useState('');
-  const [file, setFile] = useState<PickedFile | null>(null);
-  const [progress, setProgress] = useState<number | null>(null);
+  const [file, setFile] = useState<UploadableFile | null>(null);
   const [openingId, setOpeningId] = useState<string | null>(null);
   const { frame, inset } = useKeyboardInset();
 
   const seenAt = latest.data ? (latest.data.items.at(-1)?.id ?? 'empty') : null;
   useEffect(() => {
     if (seenAt) {
-      dispatch(
-        api.util.invalidateTags([
-          { type: 'Chats', id: 'LIST' },
-          { type: 'Chats', id: 'UNREAD' },
-        ]),
-      );
+      dispatch(markChatsSeen());
     }
   }, [seenAt, dispatch]);
 
   const messages = merge(older, latest.data?.items ?? []);
   const newestFirst = [...messages].reverse();
   const hasMore = moreOlder ?? latest.data?.hasMore ?? false;
-  const sending = sendState.isLoading || progress !== null;
+  const sending = sendState.isLoading;
 
   const fetchOlder = async () => {
     const first = messages[0];
@@ -157,7 +153,7 @@ export default function ChatScreen() {
       { text: 'Cancel', style: 'cancel' },
     ]);
 
-  function choose(picked: PickedFile | null) {
+  function choose(picked: UploadableFile | null) {
     if (!picked) return;
     const problem = validateFile(picked);
     if (problem) Alert.alert('Cannot send this file', problem);
@@ -168,32 +164,11 @@ export default function ChatScreen() {
     const body = text.trim();
     if (sending || (!body && !file)) return;
     try {
-      if (file) {
-        setProgress(0);
-        await uploadFile({
-          file,
-          accessToken,
-          path: `/patient/chats/${encodeURIComponent(doctorId)}/messages`,
-          fieldName: 'file',
-          parameters: body ? { body } : {},
-          onToken: (token) => dispatch(tokenRefreshed({ accessToken: token })),
-          onProgress: setProgress,
-        }).promise;
-      } else {
-        await sendText({ doctorId, body }).unwrap();
-      }
+      await sendMessage({ doctorId, body, file }).unwrap();
       setText('');
       setFile(null);
-      void latest.refetch();
     } catch (error) {
-      const err = error as { sessionEnded?: boolean; message?: string };
-      if (err.sessionEnded) {
-        void dispatch(signOut(err.message));
-        return;
-      }
-      Alert.alert('Message not sent', err.message ?? errorMessage(error));
-    } finally {
-      setProgress(null);
+      Alert.alert('Message not sent', errorMessage(error));
     }
   };
 
@@ -218,21 +193,32 @@ export default function ChatScreen() {
     <SafeAreaView style={styles.root} edges={['left', 'right', 'bottom']}>
       <Stack.Screen
         options={{
+          headerStyle: { backgroundColor: colors.primary },
+          headerTintColor: colors.textInverse,
+          headerShadowVisible: false,
           headerTitle: () => (
             <Pressable
               accessibilityRole="button"
-              accessibilityLabel={`${name || 'Doctor'}, open shared files`}
+              accessibilityLabel={`${title}, open doctor details and shared files`}
               onPress={() =>
-                router.push({ pathname: '/chats/info/[doctorId]', params: { doctorId, name: name ?? '' } })
+                router.push({ pathname: '/chats/info/[doctorId]', params: { doctorId, name: title } })
               }
               hitSlop={8}
+              style={styles.header}
             >
-              <AppText weight="semibold" numberOfLines={1}>
-                {name || 'Your doctor'}
-              </AppText>
-              <AppText variant="caption" tone="muted">
-                Tap for shared files
-              </AppText>
+              <View style={styles.avatar}>
+                <AppText weight="bold" style={styles.avatarText}>
+                  {initial}
+                </AppText>
+              </View>
+              <View style={styles.flex}>
+                <AppText weight="semibold" numberOfLines={1} style={styles.headerName}>
+                  {title}
+                </AppText>
+                <AppText variant="caption" numberOfLines={1} style={styles.headerSub}>
+                  {doctor?.details ? `${doctor.details} · ` : ''}Tap for details
+                </AppText>
+              </View>
             </Pressable>
           ),
         }}
@@ -287,10 +273,8 @@ export default function ChatScreen() {
               <AppText variant="label" numberOfLines={1} style={styles.flex}>
                 {file.name}
               </AppText>
-              {progress !== null ? (
-                <AppText variant="caption" tone="muted">
-                  {Math.round(progress * 100)}%
-                </AppText>
+              {sending ? (
+                <ActivityIndicator color={colors.primary} />
               ) : (
                 <Pressable
                   accessibilityRole="button"
@@ -348,6 +332,18 @@ export default function ChatScreen() {
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: colors.background },
   flex: { flex: 1, minWidth: 0 },
+  header: { flexDirection: 'row', alignItems: 'center', gap: space.sm, maxWidth: 260 },
+  avatar: {
+    width: 36,
+    height: 36,
+    borderRadius: radius.pill,
+    backgroundColor: colors.onPrimarySoft,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  avatarText: { color: colors.textInverse },
+  headerName: { color: colors.textInverse },
+  headerSub: { color: colors.textInverseMuted },
   list: { paddingHorizontal: space.md, paddingVertical: space.md, flexGrow: 1 },
   cell: { gap: space.sm, marginBottom: space.sm },
   day: {

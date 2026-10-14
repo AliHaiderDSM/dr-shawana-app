@@ -1,38 +1,30 @@
 import { Camera, FileText, ImageIcon, RotateCcw, Upload, X } from 'lucide-react-native';
 import { useRef, useState } from 'react';
-import { Alert, Pressable, StyleSheet, View } from 'react-native';
+import { ActivityIndicator, Alert, Pressable, StyleSheet, View } from 'react-native';
 import { AppText } from '@/components/ui/app-text';
 import { Notice } from '@/components/ui/bits';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { TextField } from '@/components/ui/text-field';
-import { signOut } from '@/features/auth/auth-actions';
-import { tokenRefreshed } from '@/features/auth/auth-slice';
+import { errorMessage } from '@/lib/errors';
 import { formatSize } from '@/lib/format';
-import { api } from '@/services/api/base-api';
-import { useAppDispatch, useAppSelector } from '@/store';
 import { colors, icon, radius, space, touch } from '@/theme/tokens';
-import { MAX_UPLOAD_BYTES, validateFile, type PickedFile } from './file-rules';
-import { pickDocumentFile, pickImageFile } from './pickers';
-import { uploadDocument, type UploadHandle } from './upload';
-
-type Phase = { kind: 'idle' } | { kind: 'uploading'; progress: number } | { kind: 'failed'; message: string };
+import { useUploadDocumentMutation } from '@/redux/features/documents';
+import type { UploadableFile } from '@/types/api';
+import { MAX_UPLOAD_BYTES, pickDocumentFile, pickImageFile, validateFile } from '@/utils/files';
 
 export function UploadPanel() {
-  const dispatch = useAppDispatch();
-  const accessToken = useAppSelector((s) => s.auth.accessToken);
-  const [file, setFile] = useState<PickedFile | null>(null);
+  const [file, setFile] = useState<UploadableFile | null>(null);
   const [title, setTitle] = useState('');
   const [problem, setProblem] = useState<string | null>(null);
-  const [phase, setPhase] = useState<Phase>({ kind: 'idle' });
-  const handle = useRef<UploadHandle | null>(null);
-  const busy = phase.kind === 'uploading';
+  const [upload, { isLoading: busy, error, reset }] = useUploadDocumentMutation();
+  const handle = useRef<{ abort: () => void } | null>(null);
 
-  const choose = (picked: PickedFile) => {
+  const choose = (picked: UploadableFile) => {
     const invalid = validateFile(picked);
     setProblem(invalid);
     setFile(invalid ? null : picked);
-    setPhase({ kind: 'idle' });
+    reset();
   };
 
   const pickDocument = async () => {
@@ -47,35 +39,22 @@ export function UploadPanel() {
 
   const start = async () => {
     if (!file || busy) return;
-    setPhase({ kind: 'uploading', progress: 0 });
-    const upload = uploadDocument({
-      file,
-      title: title.trim(),
-      accessToken,
-      onToken: (token) => dispatch(tokenRefreshed({ accessToken: token })),
-      onProgress: (progress) => setPhase({ kind: 'uploading', progress }),
-    });
-    handle.current = upload;
+    const request = upload({ file, title: title.trim() });
+    handle.current = request;
     try {
-      await upload.promise;
+      await request.unwrap();
       setFile(null);
       setTitle('');
-      setPhase({ kind: 'idle' });
-      dispatch(api.util.invalidateTags(['Documents', 'Overview', 'History']));
       Alert.alert('Report uploaded', 'The clinic can now see it in your medical records.');
-    } catch (error) {
-      const err = error as { message?: string; sessionEnded?: boolean };
-      if (err.sessionEnded) {
-        void dispatch(signOut(err.message));
-        return;
-      }
-      setPhase({ kind: 'failed', message: err.message ?? 'The upload failed. Please try again.' });
+    } catch {
+      return;
     } finally {
       handle.current = null;
     }
   };
 
-  const progress = phase.kind === 'uploading' ? phase.progress : 0;
+  const cancelled = (error as { name?: string } | undefined)?.name === 'AbortError';
+  const failed = error && !cancelled ? errorMessage(error) : null;
 
   return (
     <Card>
@@ -113,7 +92,7 @@ export function UploadPanel() {
               accessibilityLabel="Remove the chosen file"
               onPress={() => {
                 setFile(null);
-                setPhase({ kind: 'idle' });
+                reset();
               }}
               hitSlop={8}
               style={styles.remove}
@@ -137,22 +116,18 @@ export function UploadPanel() {
             editable={!busy}
           />
           {busy ? (
-            <View
-              style={styles.progressWrap}
-              accessibilityRole="progressbar"
-              accessibilityValue={{ min: 0, max: 100, now: Math.round(progress * 100) }}
-            >
-              <View style={styles.track}>
-                <View style={[styles.bar, { width: `${Math.max(4, Math.round(progress * 100))}%` }]} />
+            <View style={styles.progressWrap} accessibilityRole="progressbar" accessibilityState={{ busy: true }}>
+              <View style={styles.uploading}>
+                <ActivityIndicator color={colors.primary} />
+                <AppText variant="caption" tone="muted">
+                  Uploading… keep the app open.
+                </AppText>
               </View>
-              <AppText variant="caption" tone="muted">
-                Uploading… {Math.round(progress * 100)}%
-              </AppText>
-              <Button label="Cancel" variant="ghost" onPress={() => handle.current?.cancel()} />
+              <Button label="Cancel" variant="ghost" onPress={() => handle.current?.abort()} />
             </View>
-          ) : phase.kind === 'failed' ? (
+          ) : failed ? (
             <>
-              <Notice tone="warning">{phase.message}</Notice>
+              <Notice tone="warning">{failed}</Notice>
               <Button label="Try again" icon={RotateCcw} onPress={() => void start()} />
             </>
           ) : (
@@ -222,6 +197,5 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   progressWrap: { gap: space.sm },
-  track: { height: 8, borderRadius: radius.pill, backgroundColor: colors.surfaceMuted, overflow: 'hidden' },
-  bar: { height: 8, borderRadius: radius.pill, backgroundColor: colors.primary },
+  uploading: { flexDirection: 'row', alignItems: 'center', gap: space.sm },
 });

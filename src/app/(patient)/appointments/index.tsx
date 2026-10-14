@@ -6,12 +6,12 @@ import { AppointmentCard } from '@/components/medical/cards';
 import { ChoiceChips } from '@/components/ui/bits';
 import { ListScreen } from '@/components/ui/list-screen';
 import { useRefresh } from '@/hooks/use-refresh';
-import { useAppointmentsQuery } from '@/services/api/patient-api';
+import { useGetAppointmentsQuery } from '@/redux/features/appointments';
 
 type Filter = 'upcoming' | 'past';
 
 export default function AppointmentsScreen() {
-  const appointments = useAppointmentsQuery();
+  const appointments = useGetAppointmentsQuery();
   const { refreshing, onRefresh } = useRefresh(appointments.refetch);
   const [filter, setFilter] = useState<Filter>('upcoming');
   const all = appointments.data;

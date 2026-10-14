@@ -29,7 +29,7 @@ mobile-app/
       index.tsx            Start screen: restores the session or shows "can't reach the clinic"
       (auth)/              login (phone + clinic code)
       (patient)/
-        (tabs)/            home, history, contact, prescriptions, profile
+        (tabs)/            home, history, chats (center), prescriptions, profile
         appointments/      index, [id]
         prescriptions/[id] prescription detail
         requests/          index, [id]
@@ -39,15 +39,22 @@ mobile-app/
                            InfoRow, SectionHeader, Avatar, Notice, ChoiceChips, confirm()
       feedback/            EmptyState, ErrorState, SkeletonBlock, CardSkeleton
       medical/             AppointmentCard, PrescriptionCard, HistoryItem, DocumentCard, FileButton, RequestCard
-    features/
-      auth/                slice, session restore / sign-in / sign-out, SecureStore, form schemas
-      documents/           file rules, upload task with progress, upload panel
-    services/api/          RTK Query base (token refresh) and patient endpoints
-    store/                 Redux store and typed hooks
-    hooks/                 useOpenDocument, useRefresh
-    lib/                   config, formatting, labels, errors, phone check (+ unit tests)
+    components/forms/      UploadPanel (uses useUploadDocumentMutation)
+    redux/
+      store.ts             configureStore, setupListeners, RootState, AppDispatch
+      hooks.ts             useAppDispatch, useAppSelector
+      api/baseApi.ts       one createApi: bearer token, 30s timeout, single-flight token refresh
+      api/tagTypes.ts      Patient, Overview, Appointment, MedicalHistory, Prescription, Document,
+                           Conversation, Message, ManagementRequest (+ LIST, UNREAD ids)
+      api/formData.ts      multipart helper for uploads (120s timeout)
+      features/<name>/     index.ts (injectEndpoints + generated hooks) and types.ts
+                           auth, patient, appointments, medical-history, prescriptions,
+                           documents, chat, management-requests
+    hooks/                 useOpenDocument, useRefresh, useKeyboardInset, usePushRegistration
+    lib/                   config, formatting, labels, errors, phone check, push-notifications
+    utils/                 files (pickers + validation), login form schema
     theme/tokens.ts        colors, spacing, radii, type scale, touch sizes
-    types/api.ts           backend response types
+    types/api.ts           shared Envelope, SignedUrl, UploadableFile
 ```
 
 ## Install and run

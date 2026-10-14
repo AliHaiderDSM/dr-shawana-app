@@ -1,8 +1,8 @@
 import { router } from 'expo-router';
 import { useEffect } from 'react';
 import { Platform } from 'react-native';
-import { useSavePushTokenMutation } from '@/services/api/patient-api';
-import { onNotificationTap, pushToken } from '@/services/notifications/push';
+import { onNotificationTap, pushToken } from '@/lib/push-notifications';
+import { useSavePushTokenMutation } from '@/redux/features/chat';
 
 export function usePushRegistration() {
   const [save] = useSavePushTokenMutation();

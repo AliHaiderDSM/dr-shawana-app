@@ -5,10 +5,10 @@ import { RequestCard } from '@/components/medical/cards';
 import { Button } from '@/components/ui/button';
 import { ListScreen } from '@/components/ui/list-screen';
 import { useRefresh } from '@/hooks/use-refresh';
-import { useRequestsQuery } from '@/services/api/patient-api';
+import { useGetRequestsQuery } from '@/redux/features/management-requests';
 
 export default function RequestsScreen() {
-  const requests = useRequestsQuery();
+  const requests = useGetRequestsQuery();
   const { refreshing, onRefresh } = useRefresh(requests.refetch);
 
   return (

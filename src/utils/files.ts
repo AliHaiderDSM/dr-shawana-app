@@ -1,9 +1,39 @@
 import * as DocumentPicker from 'expo-document-picker';
 import * as ImagePicker from 'expo-image-picker';
 import { Alert } from 'react-native';
-import { normalizeType, UPLOAD_TYPES, type PickedFile } from './file-rules';
+import { formatSize } from '@/lib/format';
+import type { UploadableFile } from '@/types/api';
 
-export async function pickDocumentFile(): Promise<PickedFile | null> {
+export const MAX_UPLOAD_BYTES = 10 * 1024 * 1024;
+
+export const UPLOAD_TYPES = ['application/pdf', 'image/jpeg', 'image/png', 'image/webp'] as const;
+
+const EXTENSION_TYPES: Record<string, string> = {
+  pdf: 'application/pdf',
+  jpg: 'image/jpeg',
+  jpeg: 'image/jpeg',
+  png: 'image/png',
+  webp: 'image/webp',
+};
+
+export function normalizeType(name: string, mimeType: string | null | undefined) {
+  const type = mimeType?.toLowerCase() === 'image/jpg' ? 'image/jpeg' : mimeType?.toLowerCase();
+  if (type && (UPLOAD_TYPES as readonly string[]).includes(type)) return type;
+  const ext = name.split('.').pop()?.toLowerCase() ?? '';
+  return EXTENSION_TYPES[ext] ?? type ?? '';
+}
+
+export function validateFile(file: UploadableFile) {
+  if (!(UPLOAD_TYPES as readonly string[]).includes(file.mimeType)) {
+    return 'Choose a PDF or a photo (JPG, PNG or WebP).';
+  }
+  if (file.size !== null && file.size > MAX_UPLOAD_BYTES) {
+    return `This file is ${formatSize(file.size)}. The limit is ${formatSize(MAX_UPLOAD_BYTES)}.`;
+  }
+  return null;
+}
+
+export async function pickDocumentFile(): Promise<UploadableFile | null> {
   const result = await DocumentPicker.getDocumentAsync({
     type: [...UPLOAD_TYPES],
     multiple: false,
@@ -19,7 +49,7 @@ export async function pickDocumentFile(): Promise<PickedFile | null> {
   };
 }
 
-export async function pickImageFile(camera: boolean): Promise<PickedFile | null> {
+export async function pickImageFile(camera: boolean): Promise<UploadableFile | null> {
   if (camera) {
     const permission = await ImagePicker.requestCameraPermissionsAsync();
     if (!permission.granted) {

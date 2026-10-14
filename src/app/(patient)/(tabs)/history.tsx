@@ -5,10 +5,10 @@ import { HistoryItem } from '@/components/medical/cards';
 import { AppText } from '@/components/ui/app-text';
 import { ListScreen } from '@/components/ui/list-screen';
 import { useRefresh } from '@/hooks/use-refresh';
-import { useHistoryQuery } from '@/services/api/patient-api';
+import { useGetMedicalHistoryQuery } from '@/redux/features/medical-history';
 
 export default function HistoryScreen() {
-  const history = useHistoryQuery();
+  const history = useGetMedicalHistoryQuery();
   const { refreshing, onRefresh } = useRefresh(history.refetch);
   const visits = history.data;
 

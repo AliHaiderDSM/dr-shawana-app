@@ -4,10 +4,10 @@ import { EmptyState } from '@/components/feedback/states';
 import { PrescriptionCard } from '@/components/medical/cards';
 import { ListScreen } from '@/components/ui/list-screen';
 import { useRefresh } from '@/hooks/use-refresh';
-import { usePrescriptionsQuery } from '@/services/api/patient-api';
+import { useGetPrescriptionsQuery } from '@/redux/features/prescriptions';
 
 export default function PrescriptionsScreen() {
-  const prescriptions = usePrescriptionsQuery();
+  const prescriptions = useGetPrescriptionsQuery();
   const { refreshing, onRefresh } = useRefresh(prescriptions.refetch);
 
   return (

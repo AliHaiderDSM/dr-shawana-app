@@ -15,14 +15,11 @@ import { StatusBadge } from '@/components/ui/status-badge';
 import { formatDate, formatDateTime, formatDay, formatSize, formatTime } from '@/lib/format';
 import { MODE_LABELS, REQUEST_CATEGORY_LABELS, REQUEST_STATUS, appointmentStatus } from '@/lib/labels';
 import { colors, icon, radius, space, touch } from '@/theme/tokens';
-import type {
-  Appointment,
-  DocumentFile,
-  HistoryVisit,
-  ManagementRequest,
-  MedicalDocument,
-  PrescriptionSummary,
-} from '@/types/api';
+import { type Appointment } from '@/redux/features/appointments';
+import { type DocumentFile, type MedicalDocument } from '@/redux/features/documents';
+import { type HistoryVisit } from '@/redux/features/medical-history';
+import { type ManagementRequest } from '@/redux/features/management-requests';
+import { type PrescriptionSummary } from '@/redux/features/prescriptions';
 
 function Meta({ icon: Icon, text }: { icon: LucideIcon; text: string }) {
   return (

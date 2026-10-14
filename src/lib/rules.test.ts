@@ -1,5 +1,5 @@
 import { describe, expect, it } from '@jest/globals';
-import { MAX_UPLOAD_BYTES, normalizeType, validateFile } from '@/features/documents/file-rules';
+import { MAX_UPLOAD_BYTES, normalizeType, validateFile } from '@/utils/files';
 import { errorMessage, fieldErrors, isOffline } from './errors';
 import { isValidPhone, sanitizeCode, sanitizePhone } from './phone';
 
