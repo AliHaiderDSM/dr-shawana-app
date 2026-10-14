@@ -10,6 +10,7 @@ import { sessionStorage } from '../features/auth/storage';
 import { API_URL } from '@/lib/config';
 import type { Envelope } from '@/types/api';
 import type { Session } from '../features/auth/types';
+import { isUpload, uploadQuery, type UploadArgs } from './formData';
 import { TAG_TYPES } from './tagTypes';
 
 interface AuthRoot {
@@ -18,7 +19,7 @@ interface AuthRoot {
 
 export const SESSION_ENDED = 'Your session has ended. Ask the clinic for a new code to log in again.';
 
-const rawBaseQuery = fetchBaseQuery({
+const fetchQuery = fetchBaseQuery({
   baseUrl: API_URL,
   timeout: 30_000,
   prepareHeaders: (headers, { getState }) => {
@@ -28,6 +29,13 @@ const rawBaseQuery = fetchBaseQuery({
     return headers;
   },
 });
+
+type Args = string | FetchArgs | UploadArgs;
+
+const rawBaseQuery: BaseQueryFn<Args, unknown, FetchBaseQueryError> = (args, api, extraOptions) =>
+  isUpload(args)
+    ? uploadQuery(args, api, (api.getState() as AuthRoot).auth.accessToken)
+    : fetchQuery(args, api, extraOptions);
 
 export type RefreshResult = { kind: 'ok'; session: Session } | { kind: 'expired' } | { kind: 'offline' };
 
@@ -63,12 +71,12 @@ export function refreshSession() {
   return pending;
 }
 
-const isAuthCall = (args: string | FetchArgs) => {
+const isAuthCall = (args: Args) => {
   const url = typeof args === 'string' ? args : args.url;
   return url.startsWith('/patient/auth/');
 };
 
-const baseQueryWithReauth: BaseQueryFn<string | FetchArgs, unknown, FetchBaseQueryError> = async (
+const baseQueryWithReauth: BaseQueryFn<Args, unknown, FetchBaseQueryError> = async (
   args,
   queryApi,
   extraOptions,

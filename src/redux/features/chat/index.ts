@@ -1,6 +1,6 @@
 import type { SignedUrl } from '@/types/api';
 import { baseApi, unwrapData } from '../../api/baseApi';
-import { fileFormData, UPLOAD_TIMEOUT_MS } from '../../api/formData';
+import { fileUpload } from '../../api/formData';
 import { LIST, UNREAD } from '../../api/tagTypes';
 import type { ChatDoctor, ChatMessage, ChatPage, PushTokenInput, SendChatMessageInput } from './types';
 
@@ -38,12 +38,10 @@ export const chatApi = baseApi.injectEndpoints({
       keepUnusedDataFor: 0,
     }),
     sendChatMessage: build.mutation<ChatMessage, SendChatMessageInput>({
-      query: ({ doctorId, body, file }) => ({
-        url: `${chatPath(doctorId)}/messages`,
-        method: 'POST',
-        body: file ? fileFormData('file', file, body ? { body } : {}) : { body },
-        ...(file ? { timeout: UPLOAD_TIMEOUT_MS } : {}),
-      }),
+      query: ({ doctorId, body, file }) =>
+        file
+          ? fileUpload(`${chatPath(doctorId)}/messages`, 'file', file, body ? { body } : {})
+          : { url: `${chatPath(doctorId)}/messages`, method: 'POST', body: { body } },
       transformResponse: unwrapData<ChatMessage>,
       invalidatesTags: (_result, error, { doctorId, file }) =>
         error

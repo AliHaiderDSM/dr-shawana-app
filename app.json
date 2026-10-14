@@ -61,7 +61,8 @@
         {
           "microphonePermission": "DSM Clinic uses the microphone only when you record a voice message for your doctor."
         }
-      ]
+      ],
+      "expo-asset"
     ]
   }
 }

@@ -1,6 +1,6 @@
 import type { SignedUrl } from '@/types/api';
 import { baseApi, unwrapData } from '../../api/baseApi';
-import { fileFormData, UPLOAD_TIMEOUT_MS } from '../../api/formData';
+import { fileUpload } from '../../api/formData';
 import { LIST } from '../../api/tagTypes';
 import type { MedicalDocument, UploadDocumentInput } from './types';
 
@@ -17,12 +17,7 @@ export const documentsApi = baseApi.injectEndpoints({
       keepUnusedDataFor: 0,
     }),
     uploadDocument: build.mutation<MedicalDocument | null, UploadDocumentInput>({
-      query: ({ file, title }) => ({
-        url: '/patient/documents',
-        method: 'POST',
-        body: fileFormData('files', file, title ? { title } : {}),
-        timeout: UPLOAD_TIMEOUT_MS,
-      }),
+      query: ({ file, title }) => fileUpload('/patient/documents', 'files', file, title ? { title } : {}),
       transformResponse: unwrapData<MedicalDocument | null>,
       invalidatesTags: (_result, error) =>
         error ? [] : [{ type: 'Document', id: LIST }, { type: 'MedicalHistory', id: LIST }, 'Overview'],
