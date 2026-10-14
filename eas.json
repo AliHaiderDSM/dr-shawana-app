@@ -9,7 +9,8 @@
       "distribution": "internal",
       "env": {
         "EXPO_PUBLIC_API_URL": "https://dr-shawana-shared-backend.vercel.app/api/v1"
-      }
+      },
+      "channel": "development"
     },
     "preview": {
       "distribution": "internal",
@@ -18,13 +19,15 @@
       },
       "env": {
         "EXPO_PUBLIC_API_URL": "https://dr-shawana-shared-backend.vercel.app/api/v1"
-      }
+      },
+      "channel": "preview"
     },
     "production": {
       "autoIncrement": true,
       "env": {
         "EXPO_PUBLIC_API_URL": "https://dr-shawana-shared-backend.vercel.app/api/v1"
-      }
+      },
+      "channel": "production"
     }
   },
   "submit": {
