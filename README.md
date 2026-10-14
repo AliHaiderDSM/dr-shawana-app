@@ -12,9 +12,9 @@ Native patient app for the DSM Clinic platform. Built with Expo SDK 57, React Na
 | Appointments | Upcoming and past lists, details with doctor, branch address and phone, linked prescription and documents. |
 | Prescriptions | List and detail with medicines grouped by category, dose, instructions, follow-up date and the plan. |
 | Documents | Records from the clinic and the patient's own uploads (PDF, JPG, PNG, WebP up to 10 MB) with progress, cancel and retry. Files open through a 2-minute signed link in the in-app browser; nothing is saved on the phone. |
-| Contact | Middle tab. Category, subject and message, an emergency notice, the request number from the backend on success, request history, status timeline and the clinic's reply. |
+| Contact | From the Home card "Ask Dr. Shawana". Category, subject and message, an emergency notice, the request number from the backend on success, request history, status timeline and the clinic's reply. |
 | Messages | Chat with every doctor who saw the patient: text and photos or PDFs of reports, unread badges on the Home tab, new messages every 5 seconds while open, push notification when the doctor replies (development or store build only). |
-| Profile | Name, phone, age, date of birth, city, clinic contact, "ask to correct my details". |
+| Profile | Name, phone, age, date of birth, city and clinic contact. The pencil opens "Edit my details" (everything except the phone). |
 
 ## Folder structure
 

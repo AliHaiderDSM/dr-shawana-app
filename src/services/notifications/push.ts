@@ -1,17 +1,33 @@
 import Constants, { ExecutionEnvironment } from 'expo-constants';
-import * as Notifications from 'expo-notifications';
 import { Platform } from 'react-native';
+
+type NotificationsModule = typeof import('expo-notifications');
 
 export const MESSAGES_CHANNEL = 'messages';
 
-Notifications.setNotificationHandler({
-  handleNotification: async () => ({
-    shouldShowBanner: true,
-    shouldShowList: true,
-    shouldPlaySound: true,
-    shouldSetBadge: false,
-  }),
-});
+const unsupported =
+  Platform.OS === 'web' ||
+  (Platform.OS === 'android' && Constants.executionEnvironment === ExecutionEnvironment.StoreClient);
+
+let loading: Promise<NotificationsModule | null> | null = null;
+
+function notifications() {
+  if (unsupported) return Promise.resolve(null);
+  loading ??= import('expo-notifications')
+    .then((module) => {
+      module.setNotificationHandler({
+        handleNotification: async () => ({
+          shouldShowBanner: true,
+          shouldShowList: true,
+          shouldPlaySound: true,
+          shouldSetBadge: false,
+        }),
+      });
+      return module;
+    })
+    .catch(() => null);
+  return loading;
+}
 
 function projectId(): string | null {
   const extra = Constants.expoConfig?.extra as { eas?: { projectId?: string } } | undefined;
@@ -19,12 +35,10 @@ function projectId(): string | null {
 }
 
 export async function pushToken(): Promise<string | null> {
-  if (Platform.OS === 'web') return null;
-  if (Platform.OS === 'android' && Constants.executionEnvironment === ExecutionEnvironment.StoreClient) {
-    return null;
-  }
   const id = projectId();
   if (!id) return null;
+  const Notifications = await notifications();
+  if (!Notifications) return null;
   try {
     if (Platform.OS === 'android') {
       await Notifications.setNotificationChannelAsync(MESSAGES_CHANNEL, {
@@ -42,8 +56,17 @@ export async function pushToken(): Promise<string | null> {
 }
 
 export function onNotificationTap(handler: (data: Record<string, unknown>) => void) {
-  const subscription = Notifications.addNotificationResponseReceivedListener((response) => {
-    handler((response.notification.request.content.data ?? {}) as Record<string, unknown>);
+  let remove: (() => void) | null = null;
+  let stopped = false;
+  void notifications().then((Notifications) => {
+    if (!Notifications || stopped) return;
+    const subscription = Notifications.addNotificationResponseReceivedListener((response) => {
+      handler((response.notification.request.content.data ?? {}) as Record<string, unknown>);
+    });
+    remove = () => subscription.remove();
   });
-  return () => subscription.remove();
+  return () => {
+    stopped = true;
+    remove?.();
+  };
 }

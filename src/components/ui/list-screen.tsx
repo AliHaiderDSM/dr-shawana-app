@@ -1,15 +1,8 @@
 import type { ReactElement } from 'react';
-import {
-  FlatList,
-  KeyboardAvoidingView,
-  Platform,
-  RefreshControl,
-  StyleSheet,
-  View,
-  type ListRenderItem,
-} from 'react-native';
+import { FlatList, RefreshControl, StyleSheet, View, type ListRenderItem } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { CardSkeleton, ErrorState } from '@/components/feedback/states';
+import { useKeyboardInset } from '@/hooks/use-keyboard-inset';
 import { colors, contentMaxWidth, space } from '@/theme/tokens';
 
 interface ListScreenProps<T> {
@@ -40,13 +33,10 @@ export function ListScreen<T>({
   gap = space.md,
 }: ListScreenProps<T>) {
   const failed = Boolean(error) && !data;
+  const { frame, inset } = useKeyboardInset();
   return (
     <SafeAreaView style={styles.root} edges={['left', 'right']}>
-      <KeyboardAvoidingView
-        style={styles.root}
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-        keyboardVerticalOffset={Platform.OS === 'ios' ? 64 : 0}
-      >
+      <View ref={frame} style={[styles.root, { paddingBottom: inset }]}>
         <FlatList
           data={isLoading || failed ? [] : data}
           renderItem={renderItem}
@@ -76,7 +66,7 @@ export function ListScreen<T>({
           windowSize={7}
           removeClippedSubviews={false}
         />
-      </KeyboardAvoidingView>
+      </View>
     </SafeAreaView>
   );
 }

@@ -11,7 +11,7 @@ import {
   UserRound,
 } from 'lucide-react-native';
 import { useState } from 'react';
-import { StyleSheet, View } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
 import { CardSkeleton, ErrorState } from '@/components/feedback/states';
 import { AppText } from '@/components/ui/app-text';
 import { Avatar, confirm, InfoRow, SectionHeader } from '@/components/ui/bits';
@@ -23,7 +23,7 @@ import { useRefresh } from '@/hooks/use-refresh';
 import { formatDate, initials } from '@/lib/format';
 import { useMeQuery } from '@/services/api/patient-api';
 import { useAppDispatch } from '@/store';
-import { space } from '@/theme/tokens';
+import { colors, radius, space, touch } from '@/theme/tokens';
 
 export default function ProfileScreen() {
   const dispatch = useAppDispatch();
@@ -60,6 +60,15 @@ export default function ProfileScreen() {
               </AppText>
               <AppText tone="muted">{p.phone}</AppText>
             </View>
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="Edit my details"
+              onPress={() => router.push('/profile-edit')}
+              hitSlop={8}
+              style={styles.pencil}
+            >
+              <Pencil size={20} color={colors.primary} />
+            </Pressable>
           </View>
 
           <Card>
@@ -71,10 +80,10 @@ export default function ProfileScreen() {
             <InfoRow icon={MapPin} label="City" value={[p.city, p.country].filter(Boolean).join(', ')} />
           </Card>
           <Button
-            label="Ask to correct my details"
+            label="Edit my details"
             icon={Pencil}
             variant="secondary"
-            onPress={() => router.push({ pathname: '/contact', params: { category: 'profile_correction' } })}
+            onPress={() => router.push('/profile-edit')}
           />
 
           {p.clinic ? (
@@ -114,4 +123,12 @@ const styles = StyleSheet.create({
   head: { flexDirection: 'row', alignItems: 'center', gap: space.lg },
   flex: { flex: 1, minWidth: 0 },
   actions: { gap: space.md },
+  pencil: {
+    width: touch.iconButton,
+    height: touch.iconButton,
+    borderRadius: radius.pill,
+    backgroundColor: colors.primarySoft,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
 });

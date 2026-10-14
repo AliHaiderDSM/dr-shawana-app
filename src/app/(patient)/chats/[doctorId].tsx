@@ -1,19 +1,11 @@
-import { Stack, useLocalSearchParams } from 'expo-router';
+import { router, Stack, useLocalSearchParams } from 'expo-router';
 import * as WebBrowser from 'expo-web-browser';
 import { FileImage, FileText, Paperclip, Send, X } from 'lucide-react-native';
-import { useEffect, useRef, useState } from 'react';
-import {
-  ActivityIndicator,
-  Alert,
-  FlatList,
-  KeyboardAvoidingView,
-  Pressable,
-  StyleSheet,
-  TextInput,
-  View,
-} from 'react-native';
+import { useEffect, useState } from 'react';
+import { ActivityIndicator, Alert, FlatList, Pressable, StyleSheet, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { ErrorState } from '@/components/feedback/states';
+import { useKeyboardInset } from '@/hooks/use-keyboard-inset';
 import { AppText } from '@/components/ui/app-text';
 import { signOut } from '@/features/auth/auth-actions';
 import { tokenRefreshed } from '@/features/auth/auth-slice';
@@ -127,8 +119,7 @@ export default function ChatScreen() {
   const [file, setFile] = useState<PickedFile | null>(null);
   const [progress, setProgress] = useState<number | null>(null);
   const [openingId, setOpeningId] = useState<string | null>(null);
-  const [frameTop, setFrameTop] = useState(0);
-  const frame = useRef<View>(null);
+  const { frame, inset } = useKeyboardInset();
 
   const seenAt = latest.data ? (latest.data.items.at(-1)?.id ?? 'empty') : null;
   useEffect(() => {
@@ -225,116 +216,130 @@ export default function ChatScreen() {
 
   return (
     <SafeAreaView style={styles.root} edges={['left', 'right', 'bottom']}>
-      <Stack.Screen options={{ title: name || 'Your doctor' }} />
-      <View
-        ref={frame}
-        style={styles.root}
-        onLayout={() => frame.current?.measureInWindow((_x, y) => setFrameTop(y))}
-      >
-        <KeyboardAvoidingView style={styles.root} behavior="padding" keyboardVerticalOffset={frameTop}>
-          {latest.isError && !latest.data ? (
-            <ErrorState error={latest.error} onRetry={latest.refetch} retrying={latest.isFetching} />
-          ) : (
-            <FlatList
-              inverted
-              data={newestFirst}
-              keyExtractor={(m) => m.id}
-              contentContainerStyle={styles.list}
-              renderItem={({ item, index }) => {
-                const olderItem = newestFirst[index + 1];
-                return (
-                  <Bubble
-                    message={item}
-                    showDay={!olderItem || dayOf(olderItem.createdAt) !== dayOf(item.createdAt)}
-                    opening={openingId === item.id}
-                    onOpen={(m) => void open(m)}
-                  />
-                );
-              }}
-              onEndReached={() => void fetchOlder()}
-              onEndReachedThreshold={0.2}
-              ListFooterComponent={
-                latest.isLoading || olderState.isFetching ? (
-                  <ActivityIndicator color={colors.primary} style={styles.loader} />
-                ) : !hasMore ? (
-                  <AppText variant="caption" tone="muted" center style={styles.hint}>
-                    Messages go to your doctor only. Not for emergencies.
-                  </AppText>
-                ) : null
+      <Stack.Screen
+        options={{
+          headerTitle: () => (
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel={`${name || 'Doctor'}, open shared files`}
+              onPress={() =>
+                router.push({ pathname: '/chats/info/[doctorId]', params: { doctorId, name: name ?? '' } })
               }
-              ListEmptyComponent={
-                latest.isLoading ? null : (
-                  <AppText tone="muted" center style={styles.hint}>
-                    Write your first message. Your doctor replies here.
-                  </AppText>
-                )
-              }
-              keyboardShouldPersistTaps="handled"
-              keyboardDismissMode="interactive"
-            />
-          )}
-
-          <View style={styles.composer}>
-            {file ? (
-              <View style={styles.pending}>
-                <Paperclip size={icon.sm} color={colors.textMuted} />
-                <AppText variant="label" numberOfLines={1} style={styles.flex}>
-                  {file.name}
+              hitSlop={8}
+            >
+              <AppText weight="semibold" numberOfLines={1}>
+                {name || 'Your doctor'}
+              </AppText>
+              <AppText variant="caption" tone="muted">
+                Tap for shared files
+              </AppText>
+            </Pressable>
+          ),
+        }}
+      />
+      <View ref={frame} style={[styles.root, { paddingBottom: inset }]}>
+        {latest.isError && !latest.data ? (
+          <ErrorState error={latest.error} onRetry={latest.refetch} retrying={latest.isFetching} />
+        ) : (
+          <FlatList
+            inverted
+            data={newestFirst}
+            keyExtractor={(m) => m.id}
+            contentContainerStyle={styles.list}
+            renderItem={({ item, index }) => {
+              const olderItem = newestFirst[index + 1];
+              return (
+                <Bubble
+                  message={item}
+                  showDay={!olderItem || dayOf(olderItem.createdAt) !== dayOf(item.createdAt)}
+                  opening={openingId === item.id}
+                  onOpen={(m) => void open(m)}
+                />
+              );
+            }}
+            onEndReached={() => void fetchOlder()}
+            onEndReachedThreshold={0.2}
+            ListFooterComponent={
+              latest.isLoading || olderState.isFetching ? (
+                <ActivityIndicator color={colors.primary} style={styles.loader} />
+              ) : !hasMore ? (
+                <AppText variant="caption" tone="muted" center style={styles.hint}>
+                  Messages go to your doctor only. Not for emergencies.
                 </AppText>
-                {progress !== null ? (
-                  <AppText variant="caption" tone="muted">
-                    {Math.round(progress * 100)}%
-                  </AppText>
-                ) : (
-                  <Pressable
-                    accessibilityRole="button"
-                    accessibilityLabel="Remove the file"
-                    hitSlop={8}
-                    onPress={() => setFile(null)}
-                  >
-                    <X size={icon.md} color={colors.textMuted} />
-                  </Pressable>
-                )}
-              </View>
-            ) : null}
-            <View style={styles.inputRow}>
-              <Pressable
-                accessibilityRole="button"
-                accessibilityLabel="Attach a photo or PDF"
-                onPress={attach}
-                disabled={sending}
-                style={styles.iconButton}
-              >
-                <Paperclip size={icon.lg} color={colors.textMuted} />
-              </Pressable>
-              <TextInput
-                value={text}
-                onChangeText={setText}
-                placeholder="Write a message"
-                placeholderTextColor={colors.textMuted}
-                multiline
-                maxLength={4000}
-                maxFontSizeMultiplier={maxFontScale}
-                accessibilityLabel="Message"
-                style={styles.input}
-              />
-              <Pressable
-                accessibilityRole="button"
-                accessibilityLabel="Send"
-                accessibilityState={{ disabled: sending || (!text.trim() && !file), busy: sending }}
-                onPress={() => void send()}
-                disabled={sending || (!text.trim() && !file)}
-                style={[styles.send, (sending || (!text.trim() && !file)) && styles.sendOff]}
-              >
-                {sending ? (
-                  <ActivityIndicator color={colors.textInverse} />
-                ) : (
-                  <Send size={icon.md} color={colors.textInverse} />
-                )}
-              </Pressable>
+              ) : null
+            }
+            ListEmptyComponent={
+              latest.isLoading ? null : (
+                <AppText tone="muted" center style={styles.hint}>
+                  Write your first message. Your doctor replies here.
+                </AppText>
+              )
+            }
+            keyboardShouldPersistTaps="handled"
+            keyboardDismissMode="interactive"
+          />
+        )}
+
+        <View style={styles.composer}>
+          {file ? (
+            <View style={styles.pending}>
+              <Paperclip size={icon.sm} color={colors.textMuted} />
+              <AppText variant="label" numberOfLines={1} style={styles.flex}>
+                {file.name}
+              </AppText>
+              {progress !== null ? (
+                <AppText variant="caption" tone="muted">
+                  {Math.round(progress * 100)}%
+                </AppText>
+              ) : (
+                <Pressable
+                  accessibilityRole="button"
+                  accessibilityLabel="Remove the file"
+                  hitSlop={8}
+                  onPress={() => setFile(null)}
+                >
+                  <X size={icon.md} color={colors.textMuted} />
+                </Pressable>
+              )}
             </View>
+          ) : null}
+          <View style={styles.inputRow}>
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="Attach a photo or PDF"
+              onPress={attach}
+              disabled={sending}
+              style={styles.iconButton}
+            >
+              <Paperclip size={icon.lg} color={colors.textMuted} />
+            </Pressable>
+            <TextInput
+              value={text}
+              onChangeText={setText}
+              placeholder="Write a message"
+              placeholderTextColor={colors.textMuted}
+              multiline
+              maxLength={4000}
+              maxFontSizeMultiplier={maxFontScale}
+              accessibilityLabel="Message"
+              style={styles.input}
+            />
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="Send"
+              accessibilityState={{ disabled: sending || (!text.trim() && !file), busy: sending }}
+              onPress={() => void send()}
+              disabled={sending || (!text.trim() && !file)}
+              style={[styles.send, (sending || (!text.trim() && !file)) && styles.sendOff]}
+            >
+              {sending ? (
+                <ActivityIndicator color={colors.textInverse} />
+              ) : (
+                <Send size={icon.md} color={colors.textInverse} />
+              )}
+            </Pressable>
           </View>
-        </KeyboardAvoidingView>
+        </View>
       </View>
     </SafeAreaView>
   );

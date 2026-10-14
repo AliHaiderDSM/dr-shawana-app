@@ -1,15 +1,8 @@
 import { useRef, type ReactNode } from 'react';
-import {
-  KeyboardAvoidingView,
-  RefreshControl,
-  ScrollView,
-  StyleSheet,
-  View,
-  type StyleProp,
-  type ViewStyle,
-} from 'react-native';
+import { RefreshControl, ScrollView, StyleSheet, View, type StyleProp, type ViewStyle } from 'react-native';
 import { SafeAreaView, type Edge } from 'react-native-safe-area-context';
 import { colors, contentMaxWidth, space } from '@/theme/tokens';
+import { useKeyboardInset } from '@/hooks/use-keyboard-inset';
 import { RevealContext, useKeyboardReveal } from './keyboard-reveal';
 
 interface ScreenProps {
@@ -34,10 +27,8 @@ export function Screen({
   contentStyle,
 }: ScreenProps) {
   const scrollRef = useRef<ScrollView>(null);
-  const { reveal, frameRef, frameTop, onFrameLayout, onScroll, onFooterLayout } = useKeyboardReveal(
-    scrollRef,
-    keyboard && scroll,
-  );
+  const { frame, inset } = useKeyboardInset(keyboard);
+  const { reveal, onScroll, onFooterLayout } = useKeyboardReveal(scrollRef, keyboard && scroll);
 
   const body = scroll ? (
     <ScrollView
@@ -82,10 +73,8 @@ export function Screen({
     <SafeAreaView style={styles.root} edges={edges}>
       {keyboard ? (
         <RevealContext.Provider value={reveal}>
-          <View ref={frameRef} style={styles.flex} onLayout={onFrameLayout}>
-            <KeyboardAvoidingView style={styles.flex} behavior="padding" keyboardVerticalOffset={frameTop}>
-              {content}
-            </KeyboardAvoidingView>
+          <View ref={frame} style={[styles.flex, { paddingBottom: inset }]}>
+            {content}
           </View>
         </RevealContext.Provider>
       ) : (

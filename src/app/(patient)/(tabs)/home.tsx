@@ -185,7 +185,7 @@ export default function HomeScreen() {
               Ask about appointments, prescriptions, orders or billing. The team replies in the app.
             </AppText>
             <Button
-              label="Contact the clinic"
+              label="Ask Dr. Shawana"
               icon={MessageSquarePlus}
               onPress={() => router.push('/contact')}
             />

@@ -1,5 +1,12 @@
-import { createContext, useCallback, useContext, useEffect, useRef, useState, type RefObject } from 'react';
-import { Keyboard, type LayoutChangeEvent, type ScrollView, type View } from 'react-native';
+import { createContext, useCallback, useContext, useEffect, useRef, type RefObject } from 'react';
+import {
+  Dimensions,
+  Keyboard,
+  Platform,
+  type LayoutChangeEvent,
+  type ScrollView,
+  type View,
+} from 'react-native';
 import { space } from '@/theme/tokens';
 
 type Reveal = (target: View | null) => void;
@@ -16,8 +23,6 @@ export function useKeyboardReveal(scrollRef: RefObject<ScrollView | null>, enabl
   const keyboardTop = useRef<number | null>(null);
   const footerHeight = useRef(0);
   const target = useRef<View | null>(null);
-  const frameRef = useRef<View>(null);
-  const [frameTop, setFrameTop] = useState(0);
 
   const scrollIntoView = useCallback(() => {
     const node = target.current;
@@ -42,7 +47,11 @@ export function useKeyboardReveal(scrollRef: RefObject<ScrollView | null>, enabl
   useEffect(() => {
     if (!enabled) return;
     const show = Keyboard.addListener('keyboardDidShow', (event) => {
-      keyboardTop.current = event.endCoordinates.screenY;
+      const fromHeight = Dimensions.get('screen').height - event.endCoordinates.height;
+      keyboardTop.current =
+        Platform.OS === 'android'
+          ? Math.min(event.endCoordinates.screenY, fromHeight)
+          : event.endCoordinates.screenY;
       setTimeout(scrollIntoView, SETTLE_MS);
     });
     const hide = Keyboard.addListener('keyboardDidHide', () => {
@@ -56,9 +65,6 @@ export function useKeyboardReveal(scrollRef: RefObject<ScrollView | null>, enabl
 
   return {
     reveal: enabled ? reveal : null,
-    frameRef,
-    frameTop,
-    onFrameLayout: () => frameRef.current?.measureInWindow((_x, y) => setFrameTop(y)),
     onScroll: (y: number) => {
       scrollY.current = y;
     },

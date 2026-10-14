@@ -43,6 +43,20 @@ export const patientApi = api.injectEndpoints({
       transformResponse: unwrapData<PatientProfile>,
       providesTags: ['Profile'],
     }),
+    updateMe: build.mutation<
+      PatientProfile,
+      {
+        name?: string;
+        city?: string;
+        country?: string | null;
+        age?: number | null;
+        dateOfBirth?: string | null;
+      }
+    >({
+      query: (body) => ({ url: '/patient/me', method: 'PATCH', body }),
+      transformResponse: unwrapData<PatientProfile>,
+      invalidatesTags: ['Profile', 'Overview'],
+    }),
     overview: build.query<Overview, void>({
       query: () => '/patient/overview',
       transformResponse: unwrapData<Overview>,
@@ -113,6 +127,11 @@ export const patientApi = api.injectEndpoints({
       transformResponse: unwrapData<ChatPage>,
       providesTags: (_r, _e, { doctorId }) => [{ type: 'Chats', id: doctorId }],
     }),
+    chatFiles: build.query<ChatMessage[], string>({
+      query: (doctorId) => `/patient/chats/${encodeURIComponent(doctorId)}/files`,
+      transformResponse: unwrapData<ChatMessage[]>,
+      providesTags: (_r, _e, doctorId) => [{ type: 'Chats', id: `files-${doctorId}` }],
+    }),
     sendChatMessage: build.mutation<ChatMessage, { doctorId: string; body: string }>({
       query: ({ doctorId, body }) => ({
         url: `/patient/chats/${encodeURIComponent(doctorId)}/messages`,
@@ -159,6 +178,8 @@ export const {
   useRequestQuery,
   useCreateRequestMutation,
   useChatDoctorsQuery,
+  useChatFilesQuery,
+  useUpdateMeMutation,
   useChatUnreadQuery,
   useChatMessagesQuery,
   useLazyChatMessagesQuery,

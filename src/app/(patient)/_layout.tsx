@@ -22,7 +22,9 @@ export default function PatientLayout() {
       <Stack.Screen name="documents" options={{ title: 'Documents' }} />
       <Stack.Screen name="requests/index" options={{ title: 'My requests' }} />
       <Stack.Screen name="requests/[id]" options={{ title: 'Request' }} />
-      <Stack.Screen name="chats/index" options={{ title: 'Messages' }} />
+      <Stack.Screen name="contact" options={{ title: 'Contact the clinic' }} />
+      <Stack.Screen name="chats/info/[doctorId]" options={{ title: 'Doctor info' }} />
+      <Stack.Screen name="profile-edit" options={{ title: 'Edit my details' }} />
       <Stack.Screen name="chats/[doctorId]" options={{ title: 'Your doctor' }} />
     </Stack>
   );
