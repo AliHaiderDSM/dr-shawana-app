@@ -6,7 +6,7 @@ Native patient app for the DSM Clinic platform. Built with Expo SDK 57, React Na
 
 | Area | What the app does |
 | --- | --- |
-| Account | First sign-in with a 6-digit code from the clinic, then phone + password. Forgotten passwords are reset with a new code from the clinic. Change password; log out. |
+| Account | Log in with the phone number and a 6-digit code from the clinic. No sign-up and no password. The patient stays logged in while the app is used; after logging out, a new code is needed. |
 | Home | Greeting, next appointment, quick access, latest prescription, recent visits, open requests, contact shortcut, welcome state for new patients. |
 | Medical History | Timeline of past visits in every branch with their prescriptions and document counts. |
 | Appointments | Upcoming and past lists, details with doctor, branch address and phone, linked prescription and documents. |
@@ -26,14 +26,13 @@ mobile-app/
     app/                   Expo Router screens (every file is a route)
       _layout.tsx          Redux + safe area providers, protected route groups
       index.tsx            Start screen: restores the session or shows "can't reach the clinic"
-      (auth)/              login, activate (first sign-in / reset), forgot-password
+      (auth)/              login (phone + clinic code)
       (patient)/
         (tabs)/            home, history, contact, prescriptions, profile
         appointments/      index, [id]
         prescriptions/[id] prescription detail
         requests/          index, [id]
         documents.tsx      list + upload
-        settings.tsx       change password
     components/
       ui/                  AppText, Screen, ListScreen, Button, TextField, FormField, Card, StatusBadge,
                            InfoRow, SectionHeader, Avatar, Notice, ChoiceChips, confirm()
@@ -103,8 +102,8 @@ Before the first store build, confirm `ios.bundleIdentifier` and `android.packag
 
 - Patients sign in with their own account in the backend, separate from staff logins. A patient token is refused by every staff route and a staff token by every patient route.
 - Every patient route reads the patient from the token; no request accepts a patient id. Records, prescriptions, files and requests of other patients return 404.
-- Accounts are opened only with a single-use 6-digit code from the clinic (24 hours, 5 tries), so knowing someone's phone number is not enough.
-- Passwords are hashed with scrypt; 5 wrong passwords lock the account for 15 minutes; login, activation and refresh are rate limited.
+- Login needs a single-use 6-digit code from the clinic (24 hours, 5 wrong tries), so knowing someone's phone number is not enough. There are no passwords to leak or reset.
+- Login and refresh are rate limited. Logging out ends the session; logging in again needs a new code.
 - Access tokens live 15 minutes and only in memory. The refresh token (60 days, replaced on every use) is kept in SecureStore with `WHEN_UNLOCKED_THIS_DEVICE_ONLY` and excluded from Android backup.
 - Log out revokes the session on the server, clears SecureStore and the whole RTK Query cache. Signing in clears the cache too, so another account's data never shows.
 - Files stay in the private storage bucket and open through a 2-minute signed link. Nothing medical is written to the phone.
@@ -114,11 +113,9 @@ Before the first store build, confirm `ios.bundleIdentifier` and `android.packag
 
 | Screen | Endpoint(s) |
 | --- | --- |
-| Login | `POST /patient/auth/login` |
-| Set up account / reset | `POST /patient/auth/activate` |
+| Login | `POST /patient/auth/login` (phone + code) |
 | Session restore, token renewal | `POST /patient/auth/refresh` |
 | Log out | `POST /patient/auth/logout` |
-| Change password | `POST /patient/auth/change-password` |
 | Home | `GET /patient/overview` |
 | Profile | `GET /patient/me` |
 | Medical History | `GET /patient/history` |
@@ -148,6 +145,6 @@ Staff side (dashboard): `GET /branch/patients/:id/app-access`, `POST /branch/pat
 
 ## Testing status
 
-- Backend: 8 integration tests for the patient app (activation, wrong and reused codes, lockout, token separation, other patients' data, uploads, requests and replies, refresh rotation, logout, disabled access) inside the full suite.
+- Backend: 7 integration tests for the patient app (code login, wrong, reused and other-phone codes, five-try limit, token separation, other patients' data, uploads, requests and replies, refresh rotation, logout, disabled access) inside the full suite.
 - App: strict typecheck, Expo lint, 10 unit tests (formatting, plan text, phone check, upload rules, error messages), `expo-doctor` 21/21, and an `expo export` bundle for Android and iOS.
 - Not yet done: running on physical devices or emulators, and checking every screen at 320, 360, 390 and 430 pt widths and with large system font sizes. Layouts use flexible widths, wrapping text, 44–48 pt touch targets and a font scale cap of 1.6, but they still need a manual pass on real screens.

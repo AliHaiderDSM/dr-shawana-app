@@ -16,12 +16,8 @@ import { api, unwrapData } from './base-api';
 
 export interface LoginInput {
   phone: string;
-  password: string;
-  device?: string | null;
-}
-
-export interface ActivateInput extends LoginInput {
   code: string;
+  device?: string | null;
 }
 
 export interface NewRequestInput {
@@ -36,15 +32,8 @@ export const patientApi = api.injectEndpoints({
       query: (body) => ({ url: '/patient/auth/login', method: 'POST', body }),
       transformResponse: unwrapData<Session>,
     }),
-    activate: build.mutation<Session, ActivateInput>({
-      query: (body) => ({ url: '/patient/auth/activate', method: 'POST', body }),
-      transformResponse: unwrapData<Session>,
-    }),
     logout: build.mutation<void, void>({
       query: () => ({ url: '/patient/auth/logout', method: 'POST' }),
-    }),
-    changePassword: build.mutation<void, { currentPassword: string; newPassword: string }>({
-      query: (body) => ({ url: '/patient/auth/change-password', method: 'POST', body }),
     }),
     me: build.query<PatientProfile, void>({
       query: () => '/patient/me',
@@ -113,9 +102,7 @@ export const patientApi = api.injectEndpoints({
 
 export const {
   useLoginMutation,
-  useActivateMutation,
   useLogoutMutation,
-  useChangePasswordMutation,
   useMeQuery,
   useOverviewQuery,
   useAppointmentsQuery,

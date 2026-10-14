@@ -14,7 +14,7 @@ interface AuthRoot {
   auth: { accessToken: string | null };
 }
 
-export const SESSION_ENDED = 'Your session has ended. Please log in again.';
+export const SESSION_ENDED = 'Your session has ended. Ask the clinic for a new code to log in again.';
 
 const rawBaseQuery = fetchBaseQuery({
   baseUrl: API_URL,
