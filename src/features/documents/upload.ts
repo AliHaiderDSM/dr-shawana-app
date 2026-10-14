@@ -27,23 +27,35 @@ export interface UploadHandle {
   cancel: () => void;
 }
 
-export function uploadDocument(options: {
+interface UploadOptions {
   file: PickedFile;
-  title: string;
   accessToken: string | null;
   onToken: (token: string) => void;
   onProgress: (fraction: number) => void;
-}): UploadHandle {
+}
+
+export function uploadDocument(options: UploadOptions & { title: string }): UploadHandle {
+  return uploadFile({
+    ...options,
+    path: '/patient/documents',
+    fieldName: 'files',
+    parameters: options.title ? { title: options.title } : {},
+  });
+}
+
+export function uploadFile(
+  options: UploadOptions & { path: string; fieldName: string; parameters: Record<string, string> },
+): UploadHandle {
   let cancelled = false;
   let cancelTask: (() => void) | null = null;
 
   const attempt = async (token: string | null) => {
-    const task = new File(options.file.uri).createUploadTask(`${API_URL}/patient/documents`, {
+    const task = new File(options.file.uri).createUploadTask(`${API_URL}${options.path}`, {
       httpMethod: 'POST',
       uploadType: UploadType.MULTIPART,
-      fieldName: 'files',
+      fieldName: options.fieldName,
       mimeType: options.file.mimeType,
-      parameters: options.title ? { title: options.title } : {},
+      parameters: options.parameters,
       headers: token ? { Authorization: `Bearer ${token}`, Accept: 'application/json' } : {},
       sessionType: 'foreground',
       onProgress: ({ bytesSent, totalBytes }) => {

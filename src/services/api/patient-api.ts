@@ -1,5 +1,8 @@
 import type {
   Appointment,
+  ChatDoctor,
+  ChatMessage,
+  ChatPage,
   AppointmentDetail,
   HistoryVisit,
   ManagementRequest,
@@ -92,6 +95,46 @@ export const patientApi = api.injectEndpoints({
       transformResponse: unwrapData<ManagementRequest>,
       providesTags: (_r, _e, id) => [{ type: 'Requests', id }],
     }),
+    chatDoctors: build.query<ChatDoctor[], void>({
+      query: () => '/patient/chats',
+      transformResponse: unwrapData<ChatDoctor[]>,
+      providesTags: [{ type: 'Chats', id: 'LIST' }],
+    }),
+    chatUnread: build.query<{ unread: number }, void>({
+      query: () => '/patient/chats/unread',
+      transformResponse: unwrapData<{ unread: number }>,
+      providesTags: [{ type: 'Chats', id: 'UNREAD' }],
+    }),
+    chatMessages: build.query<ChatPage, { doctorId: string; before?: string }>({
+      query: ({ doctorId, before }) => ({
+        url: `/patient/chats/${encodeURIComponent(doctorId)}/messages`,
+        params: before ? { before } : undefined,
+      }),
+      transformResponse: unwrapData<ChatPage>,
+      providesTags: (_r, _e, { doctorId }) => [{ type: 'Chats', id: doctorId }],
+    }),
+    sendChatMessage: build.mutation<ChatMessage, { doctorId: string; body: string }>({
+      query: ({ doctorId, body }) => ({
+        url: `/patient/chats/${encodeURIComponent(doctorId)}/messages`,
+        method: 'POST',
+        body: { body },
+      }),
+      transformResponse: unwrapData<ChatMessage>,
+      invalidatesTags: (_r, _e, { doctorId }) => [
+        { type: 'Chats', id: 'LIST' },
+        { type: 'Chats', id: doctorId },
+      ],
+    }),
+    chatFileUrl: build.mutation<SignedUrl, { doctorId: string; messageId: string }>({
+      query: ({ doctorId, messageId }) => ({
+        url: `/patient/chats/${encodeURIComponent(doctorId)}/messages/${encodeURIComponent(messageId)}/file`,
+        method: 'GET',
+      }),
+      transformResponse: unwrapData<SignedUrl>,
+    }),
+    savePushToken: build.mutation<void, { token: string; platform: string }>({
+      query: (body) => ({ url: '/patient/push-token', method: 'POST', body }),
+    }),
     createRequest: build.mutation<ManagementRequest, NewRequestInput>({
       query: (body) => ({ url: '/patient/requests', method: 'POST', body }),
       transformResponse: unwrapData<ManagementRequest>,
@@ -115,4 +158,11 @@ export const {
   useRequestsQuery,
   useRequestQuery,
   useCreateRequestMutation,
+  useChatDoctorsQuery,
+  useChatUnreadQuery,
+  useChatMessagesQuery,
+  useLazyChatMessagesQuery,
+  useSendChatMessageMutation,
+  useChatFileUrlMutation,
+  useSavePushTokenMutation,
 } = patientApi;

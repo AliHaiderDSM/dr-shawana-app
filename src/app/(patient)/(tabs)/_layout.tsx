@@ -2,6 +2,7 @@ import { Tabs } from 'expo-router';
 import { History, House, MessageSquarePlus, Pill, UserRound } from 'lucide-react-native';
 import { Pressable, StyleSheet, View } from 'react-native';
 import { AppText } from '@/components/ui/app-text';
+import { useChatUnreadQuery } from '@/services/api/patient-api';
 import { colors, fontSize, radius, shadow, space } from '@/theme/tokens';
 
 function ContactButton({ onPress, focused }: { onPress?: () => void; focused: boolean }) {
@@ -29,6 +30,7 @@ function ContactButton({ onPress, focused }: { onPress?: () => void; focused: bo
 }
 
 export default function TabsLayout() {
+  const unread = useChatUnreadQuery(undefined, { pollingInterval: 30_000 }).data?.unread ?? 0;
   return (
     <Tabs
       screenOptions={{
@@ -49,6 +51,8 @@ export default function TabsLayout() {
         options={{
           title: 'Home',
           headerShown: false,
+          tabBarBadge: unread > 0 ? (unread > 99 ? '99+' : unread) : undefined,
+          tabBarBadgeStyle: { backgroundColor: colors.danger, color: colors.textInverse },
           tabBarIcon: ({ color, size }) => <House color={color} size={size} />,
         }}
       />

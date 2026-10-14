@@ -1,5 +1,3 @@
-import * as DocumentPicker from 'expo-document-picker';
-import * as ImagePicker from 'expo-image-picker';
 import { Camera, FileText, ImageIcon, RotateCcw, Upload, X } from 'lucide-react-native';
 import { useRef, useState } from 'react';
 import { Alert, Pressable, StyleSheet, View } from 'react-native';
@@ -14,7 +12,8 @@ import { formatSize } from '@/lib/format';
 import { api } from '@/services/api/base-api';
 import { useAppDispatch, useAppSelector } from '@/store';
 import { colors, icon, radius, space, touch } from '@/theme/tokens';
-import { MAX_UPLOAD_BYTES, normalizeType, UPLOAD_TYPES, validateFile, type PickedFile } from './file-rules';
+import { MAX_UPLOAD_BYTES, validateFile, type PickedFile } from './file-rules';
+import { pickDocumentFile, pickImageFile } from './pickers';
 import { uploadDocument, type UploadHandle } from './upload';
 
 type Phase = { kind: 'idle' } | { kind: 'uploading'; progress: number } | { kind: 'failed'; message: string };
@@ -37,45 +36,13 @@ export function UploadPanel() {
   };
 
   const pickDocument = async () => {
-    const result = await DocumentPicker.getDocumentAsync({
-      type: [...UPLOAD_TYPES],
-      multiple: false,
-      copyToCacheDirectory: true,
-    });
-    const asset = result.canceled ? null : result.assets[0];
-    if (!asset) return;
-    choose({
-      uri: asset.uri,
-      name: asset.name,
-      mimeType: normalizeType(asset.name, asset.mimeType),
-      size: asset.size ?? null,
-    });
+    const picked = await pickDocumentFile();
+    if (picked) choose(picked);
   };
 
   const pickImage = async (camera: boolean) => {
-    if (camera) {
-      const permission = await ImagePicker.requestCameraPermissionsAsync();
-      if (!permission.granted) {
-        Alert.alert(
-          'Camera not allowed',
-          'Allow camera access in your phone settings to take a photo of a report.',
-        );
-        return;
-      }
-    }
-    const options: ImagePicker.ImagePickerOptions = { mediaTypes: ['images'], quality: 0.8, exif: false };
-    const result = camera
-      ? await ImagePicker.launchCameraAsync(options)
-      : await ImagePicker.launchImageLibraryAsync(options);
-    const asset = result.canceled ? null : result.assets[0];
-    if (!asset) return;
-    const name = asset.fileName ?? `report-${Date.now()}.jpg`;
-    choose({
-      uri: asset.uri,
-      name,
-      mimeType: normalizeType(name, asset.mimeType ?? 'image/jpeg'),
-      size: asset.fileSize ?? null,
-    });
+    const picked = await pickImageFile(camera);
+    if (picked) choose(picked);
   };
 
   const start = async () => {

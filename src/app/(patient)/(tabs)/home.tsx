@@ -1,5 +1,6 @@
 import { router, type Href } from 'expo-router';
 import {
+  MessagesSquare,
   CalendarDays,
   CalendarPlus,
   FileText,
@@ -19,7 +20,7 @@ import { Card } from '@/components/ui/card';
 import { Screen } from '@/components/ui/screen';
 import { useRefresh } from '@/hooks/use-refresh';
 import { firstName, greeting, initials } from '@/lib/format';
-import { useOverviewQuery } from '@/services/api/patient-api';
+import { useChatUnreadQuery, useOverviewQuery } from '@/services/api/patient-api';
 import { colors, icon, radius, space, touch } from '@/theme/tokens';
 
 const QUICK: { label: string; icon: LucideIcon; href: Href }[] = [
@@ -49,6 +50,7 @@ function QuickTile({ label, icon: Icon, href }: (typeof QUICK)[number]) {
 
 export default function HomeScreen() {
   const overview = useOverviewQuery();
+  const unread = useChatUnreadQuery(undefined, { pollingInterval: 30_000 }).data?.unread ?? 0;
   const { refreshing, onRefresh } = useRefresh(overview.refetch);
   const o = overview.data;
   const isNew = o ? o.counts.appointments === 0 && o.counts.prescriptions === 0 : false;
@@ -162,6 +164,20 @@ export default function HomeScreen() {
               </View>
             </>
           ) : null}
+
+          <Card>
+            <AppText weight="semibold">Chat with your doctor</AppText>
+            <AppText tone="muted" variant="label">
+              {unread > 0
+                ? `You have ${unread} new message${unread === 1 ? '' : 's'} from your doctor.`
+                : 'Ask the doctors who saw you, and send photos of your reports.'}
+            </AppText>
+            <Button
+              label={unread > 0 ? 'Read messages' : 'Open messages'}
+              icon={MessagesSquare}
+              onPress={() => router.push('/chats')}
+            />
+          </Card>
 
           <Card>
             <AppText weight="semibold">Need help from the clinic?</AppText>

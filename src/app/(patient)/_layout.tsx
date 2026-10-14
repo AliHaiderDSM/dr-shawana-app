@@ -1,7 +1,9 @@
 import { Stack } from 'expo-router';
+import { usePushRegistration } from '@/hooks/use-push-registration';
 import { colors } from '@/theme/tokens';
 
 export default function PatientLayout() {
+  usePushRegistration();
   return (
     <Stack
       screenOptions={{
@@ -20,6 +22,8 @@ export default function PatientLayout() {
       <Stack.Screen name="documents" options={{ title: 'Documents' }} />
       <Stack.Screen name="requests/index" options={{ title: 'My requests' }} />
       <Stack.Screen name="requests/[id]" options={{ title: 'Request' }} />
+      <Stack.Screen name="chats/index" options={{ title: 'Messages' }} />
+      <Stack.Screen name="chats/[doctorId]" options={{ title: 'Your doctor' }} />
     </Stack>
   );
 }

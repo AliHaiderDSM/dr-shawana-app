@@ -48,6 +48,13 @@
           "resizeMode": "contain",
           "backgroundColor": "#FFFFFF"
         }
+      ],
+      [
+        "expo-notifications",
+        {
+          "color": "#0B6E66",
+          "defaultChannel": "messages"
+        }
       ]
     ]
   }

@@ -13,6 +13,7 @@ Native patient app for the DSM Clinic platform. Built with Expo SDK 57, React Na
 | Prescriptions | List and detail with medicines grouped by category, dose, instructions, follow-up date and the plan. |
 | Documents | Records from the clinic and the patient's own uploads (PDF, JPG, PNG, WebP up to 10 MB) with progress, cancel and retry. Files open through a 2-minute signed link in the in-app browser; nothing is saved on the phone. |
 | Contact | Middle tab. Category, subject and message, an emergency notice, the request number from the backend on success, request history, status timeline and the clinic's reply. |
+| Messages | Chat with every doctor who saw the patient: text and photos or PDFs of reports, unread badges on the Home tab, new messages every 5 seconds while open, push notification when the doctor replies (development or store build only). |
 | Profile | Name, phone, age, date of birth, city, clinic contact, "ask to correct my details". |
 
 ## Folder structure
@@ -122,6 +123,7 @@ Before the first store build, confirm `ios.bundleIdentifier` and `android.packag
 | Appointments | `GET /patient/appointments`, `GET /patient/appointments/:id` |
 | Prescriptions | `GET /patient/prescriptions`, `GET /patient/prescriptions/:id` |
 | Documents | `GET /patient/documents`, `POST /patient/documents` (multipart `files` + `title`), `GET /patient/documents/files/:fileId/url` |
+| Messages | `GET /patient/chats`, `GET /patient/chats/unread`, `GET|POST /patient/chats/:doctorId/messages`, `GET /patient/chats/:doctorId/messages/:messageId/file`, `POST /patient/push-token` |
 | Contact / requests | `POST /patient/requests`, `GET /patient/requests`, `GET /patient/requests/:id` |
 
 Staff side (dashboard): `GET /branch/patients/:id/app-access`, `POST /branch/patients/:id/app-access/code`, `POST /branch/patients/:id/app-access/disable`, `GET /branch/patient-requests`, `GET|PATCH /branch/patient-requests/:id`, and `patientRequests` in `GET /branch/badges`. Full schemas are in the backend OpenAPI docs (`/api/docs`, tags "Patient app" and "Patient requests").
@@ -135,9 +137,8 @@ Staff side (dashboard): `GET /branch/patients/:id/app-access`, `POST /branch/pat
 ## Not available yet (needs backend work)
 
 - Booking, rescheduling or cancelling appointments from the app. Patients send an "Appointment" request instead.
-- Push notifications: the backend has no device-token or notification service.
+- Push notifications need a development or store build and an EAS project (`eas init` adds the projectId). Expo Go on Android cannot receive them; the app then just skips registration and still shows new messages while open.
 - A downloadable prescription PDF: the app shows the prescription natively.
-- Chat-style conversation: one reply per request from the clinic; there is no message thread.
 - Attachments on requests.
 - Editing profile fields from the app: patients send a "Correct my details" request.
 - Lab values (blood work) and BHRT history are not exposed to the patient app.
