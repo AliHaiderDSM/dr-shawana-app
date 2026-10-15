@@ -15,7 +15,7 @@ import { useGetRequestQuery } from '@/redux/features/management-requests';
 
 export default function RequestDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
-  const request = useGetRequestQuery(id ?? '', { skip: !id, pollingInterval: 60_000 });
+  const request = useGetRequestQuery(id ?? '', { skip: !id, refetchOnMountOrArgChange: true });
   const { refreshing, onRefresh } = useRefresh(request.refetch);
   const r = request.data;
 

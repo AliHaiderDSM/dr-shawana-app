@@ -1,9 +1,11 @@
 import { Stack } from 'expo-router';
+import { useChatRealtime } from '@/hooks/use-chat-realtime';
 import { usePushRegistration } from '@/hooks/use-push-registration';
 import { colors } from '@/theme/tokens';
 
 export default function PatientLayout() {
   usePushRegistration();
+  useChatRealtime();
   return (
     <Stack
       screenOptions={{

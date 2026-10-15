@@ -114,15 +114,7 @@ export default function ChatScreen() {
       .replace(/^dr\.?\s*/i, '')
       .charAt(0)
       .toUpperCase() || 'D';
-  const latest = useGetChatMessagesQuery(
-    { doctorId },
-    {
-      skip: !doctorId,
-      pollingInterval: 5_000,
-      skipPollingIfUnfocused: true,
-      refetchOnMountOrArgChange: true,
-    },
-  );
+  const latest = useGetChatMessagesQuery({ doctorId }, { skip: !doctorId, refetchOnMountOrArgChange: true });
   const [loadOlder, olderState] = useLazyGetChatMessagesQuery();
   const [sendMessage, sendState] = useSendChatMessageMutation();
   const [getFileUrl] = useLazyGetChatFileUrlQuery();

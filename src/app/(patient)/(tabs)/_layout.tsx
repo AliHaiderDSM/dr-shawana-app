@@ -46,7 +46,7 @@ function MessagesButton({
 }
 
 export default function TabsLayout() {
-  const unread = useGetChatUnreadQuery(undefined, { pollingInterval: 30_000 }).data?.unread ?? 0;
+  const unread = useGetChatUnreadQuery().data?.unread ?? 0;
   return (
     <Tabs
       screenOptions={{

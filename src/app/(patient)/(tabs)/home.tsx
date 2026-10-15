@@ -71,7 +71,7 @@ function Stat({ label, value, onPress }: { label: string; value: number | undefi
 
 export default function HomeScreen() {
   const overview = useGetOverviewQuery();
-  const unread = useGetChatUnreadQuery(undefined, { pollingInterval: 30_000 }).data?.unread ?? 0;
+  const unread = useGetChatUnreadQuery().data?.unread ?? 0;
   const { refreshing, onRefresh } = useRefresh(overview.refetch);
   const o = overview.data;
   const isNew = o ? o.counts.appointments === 0 && o.counts.prescriptions === 0 : false;

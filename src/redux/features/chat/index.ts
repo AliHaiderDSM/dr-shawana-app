@@ -2,7 +2,14 @@ import type { SignedUrl } from '@/types/api';
 import { baseApi, unwrapData } from '../../api/baseApi';
 import { fileUpload } from '../../api/formData';
 import { LIST, UNREAD } from '../../api/tagTypes';
-import type { ChatDoctor, ChatMessage, ChatPage, PushTokenInput, SendChatMessageInput } from './types';
+import type {
+  ChatDoctor,
+  ChatMessage,
+  ChatPage,
+  ChatRealtime,
+  PushTokenInput,
+  SendChatMessageInput,
+} from './types';
 
 const chatPath = (doctorId: string) => `/patient/chats/${encodeURIComponent(doctorId)}`;
 
@@ -52,11 +59,23 @@ export const chatApi = baseApi.injectEndpoints({
               ...(file ? [{ type: 'Message' as const, id: `files-${doctorId}` }] : []),
             ],
     }),
+    getChatRealtime: build.query<ChatRealtime | null, void>({
+      query: () => '/patient/chats/realtime',
+      transformResponse: unwrapData<ChatRealtime | null>,
+      keepUnusedDataFor: 3600,
+    }),
     savePushToken: build.mutation<void, PushTokenInput>({
       query: (body) => ({ url: '/patient/push-token', method: 'POST', body }),
     }),
   }),
 });
+
+export const chatArrived = (doctorId?: string) =>
+  baseApi.util.invalidateTags([
+    { type: 'Conversation', id: LIST },
+    { type: 'Conversation', id: UNREAD },
+    ...(doctorId ? [{ type: 'Message' as const, id: doctorId }] : [{ type: 'Message' as const }]),
+  ]);
 
 export const markChatsSeen = () =>
   baseApi.util.invalidateTags([
@@ -70,6 +89,7 @@ export const {
   useGetChatMessagesQuery,
   useLazyGetChatMessagesQuery,
   useGetChatFilesQuery,
+  useGetChatRealtimeQuery,
   useLazyGetChatFileUrlQuery,
   useSendChatMessageMutation,
   useSavePushTokenMutation,

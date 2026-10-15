@@ -5,6 +5,7 @@
   "dependencies": {
     "@hookform/resolvers": "^5.9.1",
     "@reduxjs/toolkit": "^2.13.0",
+    "@supabase/realtime-js": "^2.117.2",
     "expo": "~57.0.28",
     "expo-asset": "~57.0.19",
     "expo-audio": "~57.0.5",

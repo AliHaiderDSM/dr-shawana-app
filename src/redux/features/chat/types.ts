@@ -33,3 +33,9 @@ export interface PushTokenInput {
   token: string;
   platform: string;
 }
+
+export interface ChatRealtime {
+  url: string;
+  key: string;
+  topic: string;
+}
