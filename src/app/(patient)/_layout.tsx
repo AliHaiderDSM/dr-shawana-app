@@ -22,6 +22,7 @@ export default function PatientLayout() {
       <Stack.Screen name="appointments/[id]" options={{ title: 'Appointment' }} />
       <Stack.Screen name="prescriptions/[id]" options={{ title: 'Prescription' }} />
       <Stack.Screen name="documents" options={{ title: 'Documents' }} />
+      <Stack.Screen name="resources" options={{ title: 'Educational resources' }} />
       <Stack.Screen name="requests/index" options={{ title: 'My requests' }} />
       <Stack.Screen name="requests/[id]" options={{ title: 'Request' }} />
       <Stack.Screen name="contact" options={{ title: 'Contact the clinic' }} />
