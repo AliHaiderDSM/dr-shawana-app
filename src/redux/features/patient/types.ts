@@ -34,4 +34,11 @@ export interface Overview {
   recentVisits: Appointment[];
   openRequests: number;
   counts: { appointments: number; prescriptions: number };
+  resources: EducationalResources | null;
+}
+
+export interface EducationalResources {
+  date: string;
+  doctor: string | null;
+  items: { key: string; label: string }[];
 }

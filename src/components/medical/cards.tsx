@@ -73,10 +73,14 @@ export function PrescriptionCard({
       <AppText variant="caption" tone="muted">
         Prescription #{p.prescriptionNo} · {formatDate(p.date)}
       </AppText>
-      <AppText variant="subheading" numberOfLines={2}>
-        {p.diagnosis || 'Prescription'}
+      <AppText variant="subheading" numberOfLines={1}>
+        {p.doctor ? `Prescription by ${p.doctor}` : 'Your prescription'}
       </AppText>
-      {p.doctor ? <Meta icon={Stethoscope} text={p.doctor} /> : null}
+      {p.diagnosis?.trim() ? (
+        <AppText variant="label" tone="muted" numberOfLines={1}>
+          Diagnosis: {p.diagnosis.trim()}
+        </AppText>
+      ) : null}
       <Meta icon={Pill} text={`${p.itemCount} item${p.itemCount === 1 ? '' : 's'}`} />
     </Card>
   );
@@ -114,7 +118,7 @@ export function HistoryItem({
           {visit.doctor ? <Meta icon={Stethoscope} text={visit.doctor.name} /> : null}
           <Meta icon={MapPin} text={visit.branch.name} />
           {visit.prescriptions.map((rx) => (
-            <Meta key={rx.id} icon={Pill} text={rx.diagnosis || `Prescription #${rx.prescriptionNo}`} />
+            <Meta key={rx.id} icon={Pill} text={`Prescription #${rx.prescriptionNo}`} />
           ))}
           {visit.documentCount ? (
             <Meta

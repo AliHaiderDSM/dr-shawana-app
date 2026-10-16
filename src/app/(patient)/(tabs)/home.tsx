@@ -9,6 +9,8 @@ import {
   Pill,
   ShieldCheck,
   Sparkles,
+  BookOpen,
+  CircleCheck,
   type LucideIcon,
 } from 'lucide-react-native';
 import { Pressable, StyleSheet, View } from 'react-native';
@@ -21,7 +23,7 @@ import { Card } from '@/components/ui/card';
 import { Screen } from '@/components/ui/screen';
 import { WhatsAppIcon } from '@/components/ui/whatsapp-icon';
 import { useRefresh } from '@/hooks/use-refresh';
-import { firstName, greeting, initials } from '@/lib/format';
+import { firstName, formatDate, greeting, initials } from '@/lib/format';
 import { colors, icon, radius, space, touch } from '@/theme/tokens';
 import { useGetChatUnreadQuery } from '@/redux/features/chat';
 import { useGetOverviewQuery } from '@/redux/features/patient';
@@ -185,6 +187,39 @@ export default function HomeScreen() {
             </Card>
           )}
 
+          {o.resources ? (
+            <>
+              <SectionHeader title="Educational resources" />
+              <Card>
+                <View style={styles.resourceHead}>
+                  <View style={styles.resourceIcon}>
+                    <BookOpen size={icon.md} color={colors.primary} />
+                  </View>
+                  <View style={styles.flex}>
+                    <AppText weight="semibold">Recommended for you</AppText>
+                    <AppText variant="caption" tone="muted">
+                      {o.resources.doctor ? `By ${o.resources.doctor} · ` : ''}
+                      {formatDate(o.resources.date)}
+                    </AppText>
+                  </View>
+                </View>
+                <View style={styles.resourceList}>
+                  {o.resources.items.map((item) => (
+                    <View key={item.key} style={styles.resourceRow}>
+                      <CircleCheck size={icon.sm} color={colors.success} />
+                      <AppText style={styles.flex}>{item.label}</AppText>
+                    </View>
+                  ))}
+                </View>
+                <Button
+                  label="Ask the clinic for these"
+                  variant="secondary"
+                  onPress={() => router.push('/contact')}
+                />
+              </Card>
+            </>
+          ) : null}
+
           <SectionHeader title="Quick access" />
           <View style={styles.grid}>
             {QUICK.map((q) => (
@@ -329,4 +364,15 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   list: { gap: space.md },
+  resourceHead: { flexDirection: 'row', alignItems: 'center', gap: space.md },
+  resourceIcon: {
+    width: touch.iconButton,
+    height: touch.iconButton,
+    borderRadius: radius.md,
+    backgroundColor: colors.primarySoft,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  resourceList: { gap: space.sm },
+  resourceRow: { flexDirection: 'row', alignItems: 'center', gap: space.sm },
 });

@@ -57,7 +57,7 @@ export default function PrescriptionDetailScreen() {
           Prescription #{p.prescriptionNo}
         </AppText>
         <AppText variant="heading" accessibilityRole="header">
-          {p.diagnosis || 'Prescription'}
+          {p.doctor ? `Prescription by ${p.doctor}` : 'Your prescription'}
         </AppText>
         <InfoRow icon={CalendarDays} label="Date" value={formatDate(p.date)} />
         {p.doctor ? <InfoRow icon={Stethoscope} label="Doctor" value={p.doctor} /> : null}
@@ -65,6 +65,15 @@ export default function PrescriptionDetailScreen() {
           <InfoRow icon={CalendarCheck} label="Follow-up" value={formatDate(p.followupDate)} />
         ) : null}
       </Card>
+
+      {p.diagnosis?.trim() ? (
+        <>
+          <SectionHeader title="Diagnosis" />
+          <Card>
+            <AppText selectable>{p.diagnosis.trim()}</AppText>
+          </Card>
+        </>
+      ) : null}
 
       {p.appointmentId ? (
         <Button
