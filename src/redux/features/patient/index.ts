@@ -1,4 +1,3 @@
-import type { SignedUrl } from '@/types/api';
 import { baseApi, unwrapData } from '../../api/baseApi';
 import type { Overview, PatientProfile, UpdateProfileInput } from './types';
 
@@ -19,16 +18,10 @@ export const patientApi = baseApi.injectEndpoints({
       transformResponse: unwrapData<Overview>,
       providesTags: ['Overview'],
     }),
-    getResourceFileUrl: build.query<SignedUrl, string>({
-      query: (fileId) => `/patient/resources/files/${encodeURIComponent(fileId)}/url`,
-      transformResponse: unwrapData<SignedUrl>,
-      keepUnusedDataFor: 0,
-    }),
   }),
 });
 
-export const { useGetMeQuery, useUpdateMeMutation, useGetOverviewQuery, useLazyGetResourceFileUrlQuery } =
-  patientApi;
+export const { useGetMeQuery, useUpdateMeMutation, useGetOverviewQuery } = patientApi;
 export type {
   Clinic,
   EducationalResources,

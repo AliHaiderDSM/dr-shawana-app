@@ -40,13 +40,11 @@ export interface Overview {
 export interface EducationalResources {
   date: string;
   doctor: string | null;
-  items: { key: string; label: string; files: ResourceFile[] }[];
+  items: { key: string; label: string; file: ResourceFile }[];
 }
 
 export interface ResourceFile {
-  id: string;
   name: string;
   type: string;
-  size: number;
-  createdAt: string;
+  path: string;
 }
