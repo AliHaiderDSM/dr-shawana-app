@@ -1,6 +1,7 @@
 import { router, useLocalSearchParams } from 'expo-router';
-import { CalendarCheck, CalendarDays, MessageSquarePlus, Stethoscope } from 'lucide-react-native';
-import { StyleSheet, View } from 'react-native';
+import { CalendarCheck, CalendarDays, Download, MessageSquarePlus, Stethoscope } from 'lucide-react-native';
+import { useState } from 'react';
+import { Alert, StyleSheet, View } from 'react-native';
 import { CardSkeleton, ErrorState } from '@/components/feedback/states';
 import { AppText } from '@/components/ui/app-text';
 import { InfoRow, Notice, SectionHeader } from '@/components/ui/bits';
@@ -11,6 +12,8 @@ import { StatusBadge } from '@/components/ui/status-badge';
 import { useRefresh } from '@/hooks/use-refresh';
 import { formatDate, htmlToText } from '@/lib/format';
 import { PRESCRIPTION_CATEGORY_LABELS } from '@/lib/labels';
+import { sharePrescriptionPdf } from '@/lib/prescription-pdf';
+import { useGetMeQuery } from '@/redux/features/patient';
 import { colors, space } from '@/theme/tokens';
 import { type PrescriptionItem, useGetPrescriptionQuery } from '@/redux/features/prescriptions';
 
@@ -28,6 +31,20 @@ export default function PrescriptionDetailScreen() {
   const prescription = useGetPrescriptionQuery(id ?? '', { skip: !id });
   const { refreshing, onRefresh } = useRefresh(prescription.refetch);
   const p = prescription.data;
+  const me = useGetMeQuery().data;
+  const [saving, setSaving] = useState(false);
+
+  const download = async () => {
+    if (!p || saving) return;
+    setSaving(true);
+    try {
+      await sharePrescriptionPdf(p, me);
+    } catch {
+      Alert.alert('Could not make the PDF', 'Please try again.');
+    } finally {
+      setSaving(false);
+    }
+  };
 
   if (prescription.isLoading) {
     return (
@@ -74,6 +91,8 @@ export default function PrescriptionDetailScreen() {
           </Card>
         </>
       ) : null}
+
+      <Button label="Download PDF" icon={Download} loading={saving} onPress={() => void download()} />
 
       {p.appointmentId ? (
         <Button
