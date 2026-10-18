@@ -1,0 +1,39 @@
+{
+  "project_info": {
+    "project_number": "892478321429",
+    "project_id": "drshawana-49349",
+    "storage_bucket": "drshawana-49349.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:892478321429:android:4c10e40f747de491cc2f1c",
+        "android_client_info": {
+          "package_name": "com.dsmclinic.patient"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "892478321429-jq8su7ni09fp6s7evili4utk351jl1g9.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBC1LutUyIiAPKHO0xmexlHTLvO_G5R33o"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "892478321429-jq8su7ni09fp6s7evili4utk351jl1g9.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

@@ -17,6 +17,7 @@
     },
     "android": {
       "package": "com.dsmclinic.patient",
+      "googleServicesFile": "./google-services.json",
       "adaptiveIcon": {
         "backgroundColor": "#E6F4F1",
         "foregroundImage": "./assets/android-icon-foreground.png",
