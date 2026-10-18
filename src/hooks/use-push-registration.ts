@@ -20,7 +20,12 @@ export function usePushRegistration() {
   useEffect(
     () =>
       onNotificationTap((data) => {
-        if (data.type === 'chat') router.push('/chats');
+        if (data.type !== 'chat') return;
+        if (typeof data.doctorId === 'string') {
+          router.push({ pathname: '/chats/[doctorId]', params: { doctorId: data.doctorId } });
+        } else {
+          router.push('/chats');
+        }
       }),
     [],
   );

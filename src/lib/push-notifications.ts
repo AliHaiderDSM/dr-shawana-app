@@ -58,12 +58,18 @@ export async function pushToken(): Promise<string | null> {
 export function onNotificationTap(handler: (data: Record<string, unknown>) => void) {
   let remove: (() => void) | null = null;
   let stopped = false;
-  void notifications().then((Notifications) => {
+  void notifications().then(async (Notifications) => {
     if (!Notifications || stopped) return;
     const subscription = Notifications.addNotificationResponseReceivedListener((response) => {
       handler((response.notification.request.content.data ?? {}) as Record<string, unknown>);
+      void Notifications.clearLastNotificationResponseAsync().catch(() => undefined);
     });
     remove = () => subscription.remove();
+    const opened = await Notifications.getLastNotificationResponseAsync().catch(() => null);
+    if (opened && !stopped) {
+      await Notifications.clearLastNotificationResponseAsync().catch(() => undefined);
+      handler((opened.notification.request.content.data ?? {}) as Record<string, unknown>);
+    }
   });
   return () => {
     stopped = true;
