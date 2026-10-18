@@ -30,7 +30,7 @@ import { useGetOverviewQuery } from '@/redux/features/patient';
 const QUICK: { label: string; icon: LucideIcon; href: Href }[] = [
   { label: 'Medical History', icon: History, href: '/history' },
   { label: 'Prescriptions', icon: Pill, href: '/prescriptions' },
-  { label: 'Documents', icon: FileText, href: '/documents' },
+  { label: 'Medical records', icon: FileText, href: '/documents' },
   { label: 'Appointments', icon: CalendarDays, href: '/appointments' },
   { label: 'Educational resources', icon: BookOpen, href: '/resources' },
 ];

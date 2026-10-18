@@ -1,4 +1,4 @@
-import { Camera, FileText, ImageIcon, RotateCcw, Upload, X } from 'lucide-react-native';
+import { FileText, ImageIcon, RotateCcw, Upload, X } from 'lucide-react-native';
 import { useRef, useState } from 'react';
 import { ActivityIndicator, Alert, Pressable, StyleSheet, View } from 'react-native';
 import { AppText } from '@/components/ui/app-text';
@@ -32,8 +32,8 @@ export function UploadPanel() {
     if (picked) choose(picked);
   };
 
-  const pickImage = async (camera: boolean) => {
-    const picked = await pickImageFile(camera);
+  const pickImage = async () => {
+    const picked = await pickImageFile(false);
     if (picked) choose(picked);
   };
 
@@ -66,8 +66,7 @@ export function UploadPanel() {
       {!file ? (
         <View style={styles.pickers}>
           <PickButton label="PDF or file" icon={FileText} onPress={() => void pickDocument()} />
-          <PickButton label="Photo" icon={ImageIcon} onPress={() => void pickImage(false)} />
-          <PickButton label="Camera" icon={Camera} onPress={() => void pickImage(true)} />
+          <PickButton label="Photo" icon={ImageIcon} onPress={() => void pickImage()} />
         </View>
       ) : (
         <View style={styles.picked}>

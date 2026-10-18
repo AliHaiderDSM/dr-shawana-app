@@ -15,6 +15,9 @@ export interface PatientProfile {
   dateOfBirth: string | null;
   city: string;
   country: string | null;
+  hasPassword: boolean;
+  weightKg: number | null;
+  heightCm: number | null;
   clinic: Clinic | null;
 }
 
@@ -24,6 +27,13 @@ export interface UpdateProfileInput {
   country?: string | null;
   age?: number | null;
   dateOfBirth?: string | null;
+  weightKg?: number | null;
+  heightCm?: number | null;
+}
+
+export interface SetPasswordInput {
+  currentPassword?: string | null;
+  password: string;
 }
 
 export interface Overview {

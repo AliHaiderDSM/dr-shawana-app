@@ -3,6 +3,7 @@ import {
   Building2,
   Cake,
   FileText,
+  KeyRound,
   ListChecks,
   LogOut,
   MapPin,
@@ -35,7 +36,9 @@ export default function ProfileScreen() {
   const logout = () =>
     confirm({
       title: 'Log out?',
-      message: 'To log in again you will need a new code from the clinic.',
+      message: p?.hasPassword
+        ? 'Log in again with your phone number and password.'
+        : 'To log in again you will need a new code from the clinic, or make a password first.',
       confirmLabel: 'Log out',
       destructive: true,
       onConfirm: () => {
@@ -94,7 +97,13 @@ export default function ProfileScreen() {
           <SectionHeader title="Account" />
           <View style={styles.actions}>
             <Button
-              label="My documents"
+              label={p.hasPassword ? 'Change password' : 'Make a password'}
+              icon={KeyRound}
+              variant="secondary"
+              onPress={() => router.push('/password')}
+            />
+            <Button
+              label="My medical records"
               icon={FileText}
               variant="secondary"
               onPress={() => router.push('/documents')}

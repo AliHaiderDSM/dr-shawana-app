@@ -17,3 +17,28 @@ export const loginSchema = z.object({
 });
 
 export type LoginValues = z.infer<typeof loginSchema>;
+
+const phoneField = loginSchema.shape.phone;
+const codeField = loginSchema.shape.code;
+
+export const newPassword = z
+  .string()
+  .min(6, 'Use at least 6 characters')
+  .max(72, 'Use at most 72 characters')
+  .refine((v) => v.trim().length === v.length, 'Do not start or end with a space');
+
+export const passwordLoginSchema = z.object({
+  phone: phoneField,
+  password: z.string().min(1, 'Enter your password').max(72),
+});
+
+export type PasswordLoginValues = z.infer<typeof passwordLoginSchema>;
+
+export const resetPasswordSchema = z
+  .object({ phone: phoneField, code: codeField, password: newPassword, confirm: z.string() })
+  .refine((v) => v.password === v.confirm, {
+    path: ['confirm'],
+    message: 'The two passwords are not the same',
+  });
+
+export type ResetPasswordValues = z.infer<typeof resetPasswordSchema>;

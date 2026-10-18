@@ -28,7 +28,7 @@ export default function DocumentsScreen() {
       empty={
         <EmptyState
           icon={FileText}
-          title="No documents yet"
+          title="No medical records yet"
           message="Reports the clinic adds and the ones you upload will appear here."
         />
       }

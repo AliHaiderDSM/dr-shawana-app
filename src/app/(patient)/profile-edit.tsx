@@ -24,6 +24,22 @@ const toIso = (value: string) => {
 
 const fromIso = (iso: string | null) => (iso ? iso.slice(0, 10).split('-').reverse().join('/') : '');
 
+const decimal = (value: string) => {
+  const [whole = '', ...rest] = value
+    .replace(/,/g, '.')
+    .replace(/[^\d.]/g, '')
+    .split('.');
+  return rest.length ? `${whole.slice(0, 3)}.${rest.join('').slice(0, 1)}` : whole.slice(0, 3);
+};
+
+const measure = (min: number, max: number, message: string) =>
+  z
+    .string()
+    .trim()
+    .refine((v) => v === '' || (/^\d{1,3}(\.\d?)?$/.test(v) && Number(v) >= min && Number(v) <= max), message);
+
+const toNumber = (value: string) => (value.trim() ? Number(value) : null);
+
 const schema = z.object({
   name: z.string().trim().min(1, 'Enter your name').max(150),
   age: z
@@ -39,6 +55,8 @@ const schema = z.object({
     .refine((v) => v === '' || toIso(v) !== null, 'Use DD/MM/YYYY, e.g. 14/08/1980'),
   city: z.string().trim().min(1, 'Enter your city').max(100),
   country: z.string().trim().max(100),
+  weightKg: measure(1, 400, 'Enter your weight in kg, e.g. 65 or 65.5'),
+  heightCm: measure(30, 260, 'Enter your height in cm, e.g. 162'),
 });
 
 type Values = z.infer<typeof schema>;
@@ -53,8 +71,11 @@ function EditForm({ profile }: { profile: PatientProfile }) {
       dateOfBirth: fromIso(profile.dateOfBirth),
       city: profile.city,
       country: profile.country ?? '',
+      weightKg: profile.weightKg !== null ? String(profile.weightKg) : '',
+      heightCm: profile.heightCm !== null ? String(profile.heightCm) : '',
     },
   });
+  const changed = form.formState.isDirty;
 
   const submit = form.handleSubmit(async (values) => {
     const ok = await update({
@@ -63,6 +84,8 @@ function EditForm({ profile }: { profile: PatientProfile }) {
       country: values.country || null,
       age: values.age ? Number(values.age) : null,
       dateOfBirth: values.dateOfBirth ? toIso(values.dateOfBirth) : null,
+      weightKg: toNumber(values.weightKg),
+      heightCm: toNumber(values.heightCm),
     })
       .unwrap()
       .then(() => true)
@@ -77,7 +100,13 @@ function EditForm({ profile }: { profile: PatientProfile }) {
     <Screen
       keyboard
       footer={
-        <Button label="Save my details" icon={Save} loading={isLoading} onPress={() => void submit()} />
+        <Button
+          label="Save my details"
+          icon={Save}
+          loading={isLoading}
+          disabled={!changed}
+          onPress={() => void submit()}
+        />
       }
     >
       <AppText tone="muted">Your phone number cannot be changed here because you log in with it.</AppText>
@@ -104,6 +133,24 @@ function EditForm({ profile }: { profile: PatientProfile }) {
         placeholder="DD/MM/YYYY"
         keyboardType="numbers-and-punctuation"
         maxLength={10}
+      />
+      <FormField
+        control={form.control}
+        name="weightKg"
+        label="Weight in kg (optional)"
+        placeholder="e.g. 65"
+        keyboardType="decimal-pad"
+        maxLength={5}
+        sanitize={decimal}
+      />
+      <FormField
+        control={form.control}
+        name="heightCm"
+        label="Height in cm (optional)"
+        placeholder="e.g. 162"
+        keyboardType="decimal-pad"
+        maxLength={5}
+        sanitize={decimal}
       />
       <FormField control={form.control} name="city" label="City" autoComplete="postal-address-locality" />
       <FormField control={form.control} name="country" label="Country" autoComplete="country" />

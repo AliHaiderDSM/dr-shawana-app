@@ -10,3 +10,16 @@ export interface LoginInput {
   code: string;
   device?: string | null;
 }
+
+export interface PasswordLoginInput {
+  phone: string;
+  password: string;
+  device?: string | null;
+}
+
+export interface ResetPasswordInput {
+  phone: string;
+  code: string;
+  password: string;
+  device?: string | null;
+}
