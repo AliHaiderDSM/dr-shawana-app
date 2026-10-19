@@ -10,6 +10,7 @@ import { sessionStorage } from '../features/auth/storage';
 import { API_URL } from '@/lib/config';
 import type { Envelope } from '@/types/api';
 import type { Session } from '../features/auth/types';
+import { networkResult } from './network';
 import { isUpload, uploadQuery, type UploadArgs } from './formData';
 import { TAG_TYPES } from './tagTypes';
 
@@ -82,6 +83,7 @@ const baseQueryWithReauth: BaseQueryFn<Args, unknown, FetchBaseQueryError> = asy
   extraOptions,
 ) => {
   let result = await rawBaseQuery(args, queryApi, extraOptions);
+  networkResult(queryApi.dispatch, result.error?.status !== 'FETCH_ERROR');
   if (result.error?.status !== 401 || isAuthCall(args)) return result;
   const refreshed = await refreshSession();
   if (refreshed.kind === 'ok') {

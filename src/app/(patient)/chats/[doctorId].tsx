@@ -15,6 +15,7 @@ import { formatDate, formatDuration, formatTime } from '@/lib/format';
 import { useAppDispatch } from '@/redux/hooks';
 import { colors, fontSize, icon, maxFontScale, radius, space, touch } from '@/theme/tokens';
 import {
+  chatOpened,
   markChatsSeen,
   type ChatMessage,
   useGetChatDoctorsQuery,
@@ -186,6 +187,8 @@ export default function ChatScreen() {
       dispatch(markChatsSeen());
     }
   }, [seenAt, dispatch]);
+
+  useEffect(() => (doctorId ? chatOpened(doctorId) : undefined), [doctorId]);
 
   const messages = merge(older, latest.data?.items ?? []);
   const newestFirst = [...messages].reverse();

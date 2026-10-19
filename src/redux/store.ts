@@ -2,6 +2,7 @@ import { configureStore } from '@reduxjs/toolkit';
 import { setupListeners } from '@reduxjs/toolkit/query';
 import { AppState } from 'react-native';
 import { baseApi } from './api/baseApi';
+import { registerNetworkActions } from './api/network';
 import { authReducer } from './features/auth/authSlice';
 
 export const store = configureStore({
@@ -13,6 +14,7 @@ export const store = configureStore({
 });
 
 setupListeners(store.dispatch, (dispatch, actions) => {
+  registerNetworkActions(actions);
   const subscription = AppState.addEventListener('change', (state) => {
     if (state === 'active') dispatch(actions.onFocus());
     else dispatch(actions.onFocusLost());

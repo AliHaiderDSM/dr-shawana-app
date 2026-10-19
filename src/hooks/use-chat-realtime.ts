@@ -10,6 +10,7 @@ export function useChatRealtime() {
 
   useEffect(() => {
     if (!config) return;
+    let joined = false;
     const client = new RealtimeClient(`${config.url}/realtime/v1`, {
       params: { apikey: config.key, eventsPerSecond: 5 },
     });
@@ -20,7 +21,9 @@ export function useChatRealtime() {
         dispatch(chatArrived(doctorId));
       })
       .subscribe((status) => {
-        if (status === 'SUBSCRIBED') dispatch(chatArrived());
+        if (status !== 'SUBSCRIBED') return;
+        if (joined) dispatch(chatArrived());
+        joined = true;
       });
     return () => {
       void client.removeChannel(channel);

@@ -80,12 +80,25 @@ export const chatApi = baseApi.injectEndpoints({
   }),
 });
 
+const openChats = new Map<string, number>();
+
+export function chatOpened(doctorId: string) {
+  openChats.set(doctorId, (openChats.get(doctorId) ?? 0) + 1);
+  return () => {
+    const left = (openChats.get(doctorId) ?? 1) - 1;
+    if (left > 0) openChats.set(doctorId, left);
+    else openChats.delete(doctorId);
+  };
+}
+
 export const chatArrived = (doctorId?: string) =>
-  baseApi.util.invalidateTags([
-    { type: 'Conversation', id: LIST },
-    { type: 'Conversation', id: UNREAD },
-    ...(doctorId ? [{ type: 'Message' as const, id: doctorId }] : [{ type: 'Message' as const }]),
-  ]);
+  doctorId && openChats.has(doctorId)
+    ? baseApi.util.invalidateTags([{ type: 'Message', id: doctorId }])
+    : baseApi.util.invalidateTags([
+        { type: 'Conversation', id: LIST },
+        { type: 'Conversation', id: UNREAD },
+        ...(doctorId ? [{ type: 'Message' as const, id: doctorId }] : [{ type: 'Message' as const }]),
+      ]);
 
 export const markChatsSeen = () =>
   baseApi.util.invalidateTags([

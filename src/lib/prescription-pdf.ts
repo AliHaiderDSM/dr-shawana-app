@@ -107,8 +107,7 @@ function buildHtml(p: PrescriptionDetail, patient: PatientProfile | undefined, l
   </div>`,
     )
     .join('')}
-  ${plan ? `<div class="block"><div class="heading">Plan</div><div>${multiline(plan)}</div></div>` : ''}
-  ${p.followupDate ? `<div class="block">${field('Follow up', formatDate(p.followupDate))}</div>` : ''}
+  ${plan || p.followupDate ? `<div class="block"><div class="heading">Plan of treatment</div>${plan ? `<div>${multiline(plan)}</div>` : ''}${p.followupDate ? field('Follow up', formatDate(p.followupDate)) : ''}</div>` : ''}
   <footer>Take medicines only as your doctor advised.</footer>
 </body>
 </html>`;
