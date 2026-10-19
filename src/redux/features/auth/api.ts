@@ -1,5 +1,5 @@
 import { baseApi, unwrapData } from '../../api/baseApi';
-import type { DoctorSession, LoginInput, PasswordLoginInput, ResetPasswordInput, Session } from './types';
+import type { AppSession, LoginInput, PasswordLoginInput, ResetPasswordInput, Session } from './types';
 
 export const authApi = baseApi.injectEndpoints({
   endpoints: (build) => ({
@@ -15,9 +15,9 @@ export const authApi = baseApi.injectEndpoints({
       query: (body) => ({ url: '/patient/auth/reset-password', method: 'POST', body }),
       transformResponse: unwrapData<Session>,
     }),
-    doctorLogin: build.mutation<DoctorSession, { identifier: string; password: string }>({
-      query: (body) => ({ url: '/auth/login', method: 'POST', body }),
-      transformResponse: unwrapData<DoctorSession>,
+    appLogin: build.mutation<AppSession, { identifier: string; password: string; device?: string | null }>({
+      query: (body) => ({ url: '/app/login', method: 'POST', body }),
+      transformResponse: unwrapData<AppSession>,
     }),
     forgetDoctorPushToken: build.mutation<void, string>({
       query: (token) => ({ url: '/doctor/push-token/remove', method: 'POST', body: { token } }),

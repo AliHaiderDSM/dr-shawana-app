@@ -5,11 +5,10 @@ export interface Session {
   refreshTokenExpiresAt: string;
 }
 
-export interface DoctorSession {
+export interface AppSession {
+  role: 'patient' | 'doctor';
   accessToken: string;
   refreshToken: string;
-  expiresAt: number | string;
-  me: { role: string; profile: { firstName: string; lastName: string } };
 }
 
 export interface LoginInput {
