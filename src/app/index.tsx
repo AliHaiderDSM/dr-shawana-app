@@ -11,8 +11,9 @@ import { restoreSession, signOut } from '@/redux/features/auth';
 export default function Index() {
   const dispatch = useAppDispatch();
   const status = useAppSelector((s) => s.auth.status);
+  const role = useAppSelector((s) => s.auth.role);
 
-  if (status === 'signedIn') return <Redirect href="/home" />;
+  if (status === 'signedIn') return <Redirect href={role === 'doctor' ? '/doctor' : '/home'} />;
   if (status === 'signedOut') return <Redirect href="/login" />;
 
   return (

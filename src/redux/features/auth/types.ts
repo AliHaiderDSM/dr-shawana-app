@@ -5,6 +5,13 @@ export interface Session {
   refreshTokenExpiresAt: string;
 }
 
+export interface DoctorSession {
+  accessToken: string;
+  refreshToken: string;
+  expiresAt: number | string;
+  me: { role: string; profile: { firstName: string; lastName: string } };
+}
+
 export interface LoginInput {
   phone: string;
   code: string;

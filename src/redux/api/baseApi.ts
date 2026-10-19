@@ -6,7 +6,7 @@ import {
   type FetchBaseQueryError,
 } from '@reduxjs/toolkit/query/react';
 import { signedOut, tokenRefreshed } from '../features/auth/authSlice';
-import { sessionStorage } from '../features/auth/storage';
+import { sessionStorage, type AppRole } from '../features/auth/storage';
 import { API_URL } from '@/lib/config';
 import type { Envelope } from '@/types/api';
 import type { Session } from '../features/auth/types';
@@ -18,7 +18,7 @@ interface AuthRoot {
   auth: { accessToken: string | null };
 }
 
-export const SESSION_ENDED = 'Your session has ended. Ask the clinic for a new code to log in again.';
+export const SESSION_ENDED = 'Your session has ended. Please log in again.';
 
 const fetchQuery = fetchBaseQuery({
   baseUrl: API_URL,
@@ -38,16 +38,20 @@ const rawBaseQuery: BaseQueryFn<Args, unknown, FetchBaseQueryError> = (args, api
     ? uploadQuery(args, api, (api.getState() as AuthRoot).auth.accessToken)
     : fetchQuery(args, api, extraOptions);
 
-export type RefreshResult = { kind: 'ok'; session: Session } | { kind: 'expired' } | { kind: 'offline' };
+export type RefreshResult =
+  | { kind: 'ok'; session: Pick<Session, 'accessToken' | 'refreshToken'>; role: AppRole }
+  | { kind: 'expired' }
+  | { kind: 'offline' };
 
 let pending: Promise<RefreshResult> | null = null;
 
 async function requestRefresh(): Promise<RefreshResult> {
   const refreshToken = await sessionStorage.getRefreshToken();
   if (!refreshToken) return { kind: 'expired' };
+  const role = await sessionStorage.getRole();
   let response: Response;
   try {
-    response = await fetch(`${API_URL}/patient/auth/refresh`, {
+    response = await fetch(`${API_URL}${role === 'doctor' ? '/auth/refresh' : '/patient/auth/refresh'}`, {
       method: 'POST',
       headers: { 'content-type': 'application/json', accept: 'application/json' },
       body: JSON.stringify({ refreshToken }),
@@ -60,9 +64,9 @@ async function requestRefresh(): Promise<RefreshResult> {
     return { kind: 'expired' };
   }
   if (!response.ok) return { kind: 'offline' };
-  const body = (await response.json()) as Envelope<Session>;
+  const body = (await response.json()) as Envelope<Pick<Session, 'accessToken' | 'refreshToken'>>;
   await sessionStorage.setRefreshToken(body.data.refreshToken);
-  return { kind: 'ok', session: body.data };
+  return { kind: 'ok', session: body.data, role };
 }
 
 export function refreshSession() {
@@ -74,7 +78,7 @@ export function refreshSession() {
 
 const isAuthCall = (args: Args) => {
   const url = typeof args === 'string' ? args : args.url;
-  return url.startsWith('/patient/auth/');
+  return url.startsWith('/patient/auth/') || url.startsWith('/auth/');
 };
 
 const baseQueryWithReauth: BaseQueryFn<Args, unknown, FetchBaseQueryError> = async (

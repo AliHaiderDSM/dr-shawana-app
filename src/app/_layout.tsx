@@ -11,6 +11,7 @@ import { restoreSession } from '@/redux/features/auth';
 function Navigator() {
   const dispatch = useAppDispatch();
   const status = useAppSelector((s) => s.auth.status);
+  const role = useAppSelector((s) => s.auth.role);
 
   useEffect(() => {
     void dispatch(restoreSession());
@@ -19,8 +20,11 @@ function Navigator() {
   return (
     <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colors.background } }}>
       <Stack.Screen name="index" />
-      <Stack.Protected guard={status === 'signedIn'}>
+      <Stack.Protected guard={status === 'signedIn' && role === 'patient'}>
         <Stack.Screen name="(patient)" />
+      </Stack.Protected>
+      <Stack.Protected guard={status === 'signedIn' && role === 'doctor'}>
+        <Stack.Screen name="doctor" />
       </Stack.Protected>
       <Stack.Protected guard={status === 'signedOut'}>
         <Stack.Screen name="(auth)" />

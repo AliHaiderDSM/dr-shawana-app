@@ -5,6 +5,10 @@ type NotificationsModule = typeof import('expo-notifications');
 
 export const MESSAGES_CHANNEL = 'messages';
 
+let cachedToken: string | null = null;
+
+export const lastPushToken = () => cachedToken;
+
 const unsupported =
   Platform.OS === 'web' ||
   (Platform.OS === 'android' && Constants.executionEnvironment === ExecutionEnvironment.StoreClient);
@@ -49,7 +53,8 @@ export async function pushToken(): Promise<string | null> {
     const current = await Notifications.getPermissionsAsync();
     const status = current.granted ? current.status : (await Notifications.requestPermissionsAsync()).status;
     if (status !== 'granted') return null;
-    return (await Notifications.getExpoPushTokenAsync({ projectId: id })).data;
+    cachedToken = (await Notifications.getExpoPushTokenAsync({ projectId: id })).data;
+    return cachedToken;
   } catch {
     return null;
   }

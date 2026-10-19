@@ -1,8 +1,9 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { router } from 'expo-router';
-import { HeartPulse, LogIn } from 'lucide-react-native';
+import { HeartPulse, LogIn, Stethoscope } from 'lucide-react-native';
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
+import { z } from 'zod';
 import { Pressable, StyleSheet, View } from 'react-native';
 import { AppText } from '@/components/ui/app-text';
 import { Notice } from '@/components/ui/bits';
@@ -23,34 +24,101 @@ import { colors, radius, space, touch } from '@/theme/tokens';
 import {
   completeSignIn,
   noticeSeen,
+  useDoctorLoginMutation,
   useLoginMutation,
   usePasswordLoginMutation,
   type Session,
 } from '@/redux/features/auth';
 
 type Mode = 'password' | 'code';
+type Who = 'patient' | 'doctor';
 
-function ModeSwitch({ mode, onChange }: { mode: Mode; onChange: (mode: Mode) => void }) {
+function Switch<T extends string>({
+  value,
+  options,
+  onChange,
+}: {
+  value: T;
+  options: readonly (readonly [T, string])[];
+  onChange: (value: T) => void;
+}) {
   return (
     <View style={styles.switch} accessibilityRole="tablist">
-      {(
-        [
-          ['password', 'Password'],
-          ['code', 'Code from clinic'],
-        ] as const
-      ).map(([value, label]) => (
+      {options.map(([option, label]) => (
         <Pressable
-          key={value}
+          key={option}
           accessibilityRole="tab"
-          accessibilityState={{ selected: mode === value }}
-          onPress={() => onChange(value)}
-          style={[styles.tab, mode === value && styles.tabActive]}
+          accessibilityState={{ selected: value === option }}
+          onPress={() => onChange(option)}
+          style={[styles.tab, value === option && styles.tabActive]}
         >
-          <AppText variant="label" weight="semibold" tone={mode === value ? undefined : 'muted'} center>
+          <AppText variant="label" weight="semibold" tone={value === option ? undefined : 'muted'} center>
             {label}
           </AppText>
         </Pressable>
       ))}
+    </View>
+  );
+}
+
+const doctorSchema = z.object({
+  identifier: z.string().trim().min(3, 'Enter your email or username').max(150),
+  password: z.string().min(1, 'Enter your password').max(72),
+});
+
+function DoctorForm() {
+  const dispatch = useAppDispatch();
+  const [login, { isLoading, error, reset }] = useDoctorLoginMutation();
+  const [problem, setProblem] = useState<string | null>(null);
+  const form = useForm<z.infer<typeof doctorSchema>>({
+    resolver: zodResolver(doctorSchema),
+    defaultValues: { identifier: '', password: '' },
+  });
+  const submit = form.handleSubmit(async (values) => {
+    setProblem(null);
+    const session = await login(values)
+      .unwrap()
+      .catch(() => null);
+    if (!session) return;
+    if (session.me.role !== 'doctor') {
+      setProblem('This login is not a doctor account. Use the dashboard for other staff roles.');
+      return;
+    }
+    dispatch(noticeSeen());
+    await dispatch(
+      completeSignIn({ accessToken: session.accessToken, refreshToken: session.refreshToken }, 'doctor'),
+    );
+  });
+  const shown = problem ?? (error ? errorMessage(error) : null);
+  return (
+    <View style={styles.form}>
+      {shown ? <Notice tone="warning">{shown}</Notice> : null}
+      <FormField
+        control={form.control}
+        name="identifier"
+        label="Email or username"
+        autoCapitalize="none"
+        autoComplete="username"
+        textContentType="username"
+        returnKeyType="next"
+        onChange={() => (error || problem) && (reset(), setProblem(null))}
+      />
+      <FormField
+        control={form.control}
+        name="password"
+        label="Password"
+        secureTextEntry
+        autoCapitalize="none"
+        autoComplete="current-password"
+        textContentType="password"
+        returnKeyType="go"
+        onSubmitEditing={() => void submit()}
+        onChange={() => (error || problem) && (reset(), setProblem(null))}
+      />
+      <Button label="Log in as doctor" icon={Stethoscope} loading={isLoading} onPress={() => void submit()} />
+      <AppText variant="label" tone="muted" center>
+        Use the same email or username and password as the clinic dashboard.
+      </AppText>
     </View>
   );
 }
@@ -154,6 +222,7 @@ export default function LoginScreen() {
   const dispatch = useAppDispatch();
   const notice = useAppSelector((s) => s.auth.notice);
   const [mode, setMode] = useState<Mode>('password');
+  const [who, setWho] = useState<Who>('patient');
 
   const onSession = async (session: Session) => {
     dispatch(noticeSeen());
@@ -170,16 +239,39 @@ export default function LoginScreen() {
           Welcome back
         </AppText>
         <AppText tone="muted" center>
-          {mode === 'password'
-            ? 'Log in with your phone number and your password.'
-            : 'First time? Log in with your phone number and the 6-digit code from the clinic.'}
+          {who === 'doctor'
+            ? 'Doctors: see your patients, their records and chat with them.'
+            : mode === 'password'
+              ? 'Log in with your phone number and your password.'
+              : 'First time? Log in with your phone number and the 6-digit code from the clinic.'}
         </AppText>
       </View>
 
       {notice ? <Notice tone="warning">{notice}</Notice> : null}
 
-      <ModeSwitch mode={mode} onChange={setMode} />
-      {mode === 'password' ? <PasswordForm onSession={onSession} /> : <CodeForm onSession={onSession} />}
+      <Switch
+        value={who}
+        onChange={setWho}
+        options={[
+          ['patient', 'I am a patient'],
+          ['doctor', 'I am a doctor'],
+        ]}
+      />
+      {who === 'doctor' ? (
+        <DoctorForm />
+      ) : (
+        <>
+          <Switch
+            value={mode}
+            onChange={setMode}
+            options={[
+              ['password', 'Password'],
+              ['code', 'Code from clinic'],
+            ]}
+          />
+          {mode === 'password' ? <PasswordForm onSession={onSession} /> : <CodeForm onSession={onSession} />}
+        </>
+      )}
     </Screen>
   );
 }
