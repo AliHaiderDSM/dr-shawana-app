@@ -45,10 +45,20 @@ export const chatApi = baseApi.injectEndpoints({
       keepUnusedDataFor: 0,
     }),
     sendChatMessage: build.mutation<ChatMessage, SendChatMessageInput>({
-      query: ({ doctorId, body, file }) =>
-        file
-          ? fileUpload(`${chatPath(doctorId)}/messages`, 'file', file, body ? { body } : {})
-          : { url: `${chatPath(doctorId)}/messages`, method: 'POST', body: { body } },
+      query: ({ doctorId, body, file, replyToId, durationMs }) => {
+        const extra = {
+          ...(body ? { body } : {}),
+          ...(replyToId ? { replyToId } : {}),
+          ...(durationMs ? { durationMs: String(Math.round(durationMs)) } : {}),
+        };
+        return file
+          ? fileUpload(`${chatPath(doctorId)}/messages`, 'file', file, extra)
+          : {
+              url: `${chatPath(doctorId)}/messages`,
+              method: 'POST',
+              body: { body, ...(replyToId ? { replyToId } : {}) },
+            };
+      },
       transformResponse: unwrapData<ChatMessage>,
       invalidatesTags: (_result, error, { doctorId, file }) =>
         error

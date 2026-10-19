@@ -7,7 +7,15 @@ import { errorMessage } from '@/lib/errors';
 import { formatDuration } from '@/lib/format';
 import { colors, icon, radius, space, touch } from '@/theme/tokens';
 
-export function VoiceNote({ mine, load }: { mine: boolean; load: () => Promise<string> }) {
+export function VoiceNote({
+  mine,
+  load,
+  durationMs,
+}: {
+  mine: boolean;
+  load: () => Promise<string>;
+  durationMs?: number | null;
+}) {
   const player = useAudioPlayer(null, { updateInterval: 250 });
   const status = useAudioPlayerStatus(player);
   const [loaded, setLoaded] = useState(false);
@@ -15,7 +23,10 @@ export function VoiceNote({ mine, load }: { mine: boolean; load: () => Promise<s
   const fg = mine ? colors.textInverse : colors.primary;
   const track = mine ? colors.onPrimarySoft : colors.surfaceMuted;
   const fill = mine ? colors.textInverse : colors.primary;
-  const progress = status.duration > 0 ? Math.min(1, status.currentTime / status.duration) : 0;
+  const known = durationMs ? durationMs / 1000 : 0;
+  const length = known || (status.duration > status.currentTime ? status.duration : 0);
+  const progress = status.didJustFinish ? 1 : length > 0 ? Math.min(1, status.currentTime / length) : 0;
+  const shown = length || status.duration;
   const busy = loading || (loaded && status.isBuffering && !status.playing);
 
   const toggle = async () => {
@@ -29,7 +40,7 @@ export function VoiceNote({ mine, load }: { mine: boolean; load: () => Promise<s
         setLoading(true);
         player.replace({ uri: await load() });
         setLoaded(true);
-      } else if (status.duration > 0 && status.currentTime >= status.duration - 0.25) {
+      } else if (status.duration > 0 && status.currentTime >= Math.max(status.duration, known) - 0.25) {
         await player.seekTo(0);
       }
       player.play();
@@ -62,9 +73,11 @@ export function VoiceNote({ mine, load }: { mine: boolean; load: () => Promise<s
           <View style={[styles.fill, { backgroundColor: fill, width: `${Math.round(progress * 100)}%` }]} />
         </View>
         <AppText variant="caption" style={{ color: mine ? colors.textInverseMuted : colors.textMuted }}>
-          {loaded && status.duration > 0
-            ? `${formatDuration(status.playing || progress > 0 ? status.currentTime : status.duration)}`
-            : 'Voice message'}
+          {loaded && shown > 0
+            ? formatDuration(status.playing || (progress > 0 && progress < 1) ? status.currentTime : shown)
+            : known > 0
+              ? formatDuration(known)
+              : 'Voice message'}
         </AppText>
       </View>
     </View>

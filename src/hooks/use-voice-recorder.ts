@@ -45,11 +45,14 @@ export function useVoiceRecorder() {
     return length;
   };
 
-  const finish = async (): Promise<UploadableFile | null> => {
+  const finish = async (): Promise<{ file: UploadableFile; durationMs: number } | null> => {
     const length = await stop();
     const uri = recorder.uri;
     if (!uri || length < MIN_VOICE_MS) return null;
-    return { uri, name: `voice-${Date.now()}.m4a`, mimeType: VOICE_TYPE, size: null };
+    return {
+      file: { uri, name: `voice-${Date.now()}.m4a`, mimeType: VOICE_TYPE, size: null },
+      durationMs: length,
+    };
   };
 
   const cancel = async () => {

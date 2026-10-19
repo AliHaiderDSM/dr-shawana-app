@@ -1,8 +1,8 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { router } from 'expo-router';
 import { Save } from 'lucide-react-native';
-import { useForm } from 'react-hook-form';
-import { Alert } from 'react-native';
+import { useForm, useWatch } from 'react-hook-form';
+import { Alert, StyleSheet, View } from 'react-native';
 import { z } from 'zod';
 import { CardSkeleton, ErrorState } from '@/components/feedback/states';
 import { AppText } from '@/components/ui/app-text';
@@ -11,6 +11,7 @@ import { Button } from '@/components/ui/button';
 import { FormField } from '@/components/ui/form-field';
 import { Screen } from '@/components/ui/screen';
 import { errorMessage } from '@/lib/errors';
+import { space } from '@/theme/tokens';
 import { type PatientProfile, useGetMeQuery, useUpdateMeMutation } from '@/redux/features/patient';
 
 const toIso = (value: string) => {
@@ -24,6 +25,22 @@ const toIso = (value: string) => {
 
 const fromIso = (iso: string | null) => (iso ? iso.slice(0, 10).split('-').reverse().join('/') : '');
 
+const ageFrom = (iso: string | null) => {
+  if (!iso) return null;
+  const [y, m, d] = iso.split('-').map(Number) as [number, number, number];
+  const now = new Date();
+  let years = now.getFullYear() - y;
+  if (now.getMonth() + 1 < m || (now.getMonth() + 1 === m && now.getDate() < d)) years -= 1;
+  return years >= 0 && years <= 120 ? years : null;
+};
+
+const dateTyping = (value: string) => {
+  const digits = value.replace(/\D/g, '').slice(0, 8);
+  if (digits.length <= 2) return digits;
+  if (digits.length <= 4) return `${digits.slice(0, 2)}/${digits.slice(2)}`;
+  return `${digits.slice(0, 2)}/${digits.slice(2, 4)}/${digits.slice(4)}`;
+};
+
 const decimal = (value: string) => {
   const [whole = '', ...rest] = value
     .replace(/,/g, '.')
@@ -36,23 +53,21 @@ const measure = (min: number, max: number, message: string) =>
   z
     .string()
     .trim()
-    .refine((v) => v === '' || (/^\d{1,3}(\.\d?)?$/.test(v) && Number(v) >= min && Number(v) <= max), message);
+    .refine(
+      (v) => v === '' || (/^\d{1,3}(\.\d?)?$/.test(v) && Number(v) >= min && Number(v) <= max),
+      message,
+    );
 
 const toNumber = (value: string) => (value.trim() ? Number(value) : null);
 
 const schema = z.object({
   name: z.string().trim().min(1, 'Enter your name').max(150),
-  age: z
-    .string()
-    .trim()
-    .refine(
-      (v) => v === '' || (/^\d{1,3}$/.test(v) && Number(v) >= 1 && Number(v) <= 120),
-      'Enter an age from 1 to 120',
-    ),
   dateOfBirth: z
     .string()
     .trim()
-    .refine((v) => v === '' || toIso(v) !== null, 'Use DD/MM/YYYY, e.g. 14/08/1980'),
+    .min(1, 'Enter your date of birth')
+    .refine((v) => toIso(v) !== null, 'Use DD/MM/YYYY, e.g. 14/08/1980')
+    .refine((v) => ageFrom(toIso(v)) !== null, 'Check the year of birth'),
   city: z.string().trim().min(1, 'Enter your city').max(100),
   country: z.string().trim().max(100),
   weightKg: measure(1, 400, 'Enter your weight in kg, e.g. 65 or 65.5'),
@@ -67,7 +82,6 @@ function EditForm({ profile }: { profile: PatientProfile }) {
     resolver: zodResolver(schema),
     defaultValues: {
       name: profile.name,
-      age: profile.age !== null ? String(profile.age) : '',
       dateOfBirth: fromIso(profile.dateOfBirth),
       city: profile.city,
       country: profile.country ?? '',
@@ -76,14 +90,19 @@ function EditForm({ profile }: { profile: PatientProfile }) {
     },
   });
   const changed = form.formState.isDirty;
+  const typedBirth = useWatch({ control: form.control, name: 'dateOfBirth' });
+  const age = ageFrom(toIso(typedBirth ?? ''));
 
   const submit = form.handleSubmit(async (values) => {
     const ok = await update({
       name: values.name,
       city: values.city,
       country: values.country || null,
-      age: values.age ? Number(values.age) : null,
-      dateOfBirth: values.dateOfBirth ? toIso(values.dateOfBirth) : null,
+      age: (() => {
+        const years = ageFrom(toIso(values.dateOfBirth));
+        return years && years >= 1 ? years : null;
+      })(),
+      dateOfBirth: toIso(values.dateOfBirth),
       weightKg: toNumber(values.weightKg),
       heightCm: toNumber(values.heightCm),
     })
@@ -118,22 +137,22 @@ function EditForm({ profile }: { profile: PatientProfile }) {
         autoComplete="name"
         textContentType="name"
       />
-      <FormField
-        control={form.control}
-        name="age"
-        label="Age"
-        keyboardType="number-pad"
-        maxLength={3}
-        sanitize={(v) => v.replace(/\D/g, '')}
-      />
-      <FormField
-        control={form.control}
-        name="dateOfBirth"
-        label="Date of birth (optional)"
-        placeholder="DD/MM/YYYY"
-        keyboardType="numbers-and-punctuation"
-        maxLength={10}
-      />
+      <View>
+        <FormField
+          control={form.control}
+          name="dateOfBirth"
+          label="Date of birth"
+          placeholder="DD/MM/YYYY"
+          keyboardType="number-pad"
+          maxLength={10}
+          sanitize={dateTyping}
+        />
+        {age !== null ? (
+          <AppText variant="caption" tone="muted" style={styles.age}>
+            Age: {age} {age === 1 ? 'year' : 'years'}
+          </AppText>
+        ) : null}
+      </View>
       <FormField
         control={form.control}
         name="weightKg"
@@ -176,3 +195,7 @@ export default function ProfileEditScreen() {
   }
   return <EditForm profile={me.data} />;
 }
+
+const styles = StyleSheet.create({
+  age: { alignSelf: 'flex-end', marginTop: space.xs },
+});

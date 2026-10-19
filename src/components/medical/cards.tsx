@@ -6,6 +6,7 @@ import {
   MapPin,
   Pill,
   Stethoscope,
+  Trash2,
   type LucideIcon,
 } from 'lucide-react-native';
 import { ActivityIndicator, Pressable, StyleSheet, View } from 'react-native';
@@ -174,10 +175,14 @@ export function DocumentCard({
   document: d,
   openingId,
   onOpen,
+  onDelete,
+  deleting = false,
 }: {
   document: MedicalDocument;
   openingId: string | null;
   onOpen: (file: DocumentFile) => void;
+  onDelete?: (document: MedicalDocument) => void;
+  deleting?: boolean;
 }) {
   return (
     <Card>
@@ -189,8 +194,26 @@ export function DocumentCard({
           label={d.uploadedByPatient ? 'Uploaded by you' : 'From clinic'}
           tone={d.uploadedByPatient ? 'info' : 'primary'}
         />
+        {onDelete && d.uploadedByPatient ? (
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Delete this report"
+            onPress={() => onDelete(d)}
+            disabled={deleting}
+            hitSlop={8}
+          >
+            {deleting ? (
+              <ActivityIndicator color={colors.danger} />
+            ) : (
+              <Trash2 size={icon.md} color={colors.danger} />
+            )}
+          </Pressable>
+        ) : null}
       </View>
-      <Meta icon={CalendarDays} text={formatDate(d.date)} />
+      <Meta
+        icon={CalendarDays}
+        text={`${formatDate(d.date)} · ${d.type === 'imaging' ? 'Imaging' : 'Lab / medical report'}`}
+      />
       <View style={styles.files}>
         {d.files.map((file) => (
           <FileButton key={file.id} file={file} opening={openingId === file.id} onOpen={onOpen} />

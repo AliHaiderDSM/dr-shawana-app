@@ -4,8 +4,9 @@ import { FileImage, FileText, ImagePlus, Mic, Send, Trash2, X } from 'lucide-rea
 import { useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Alert, FlatList, Pressable, StyleSheet, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { SwipeToReply } from '@/components/chat/swipe-to-reply';
 import { VoiceNote } from '@/components/chat/voice-note';
-import { ErrorState } from '@/components/feedback/states';
+import { ErrorState, SkeletonBlock } from '@/components/feedback/states';
 import { useKeyboardInset } from '@/hooks/use-keyboard-inset';
 import { MAX_VOICE_SECONDS, useVoiceRecorder } from '@/hooks/use-voice-recorder';
 import { AppText } from '@/components/ui/app-text';
@@ -32,6 +33,51 @@ const clock = (iso: string) => {
 
 const dayOf = (iso: string) => formatDate(iso);
 
+const quoteText = (m: { body: string | null; file: { name: string; type: string } | null }) =>
+  m.body?.trim() || (m.file?.type.startsWith('audio/') ? 'Voice message' : (m.file?.name ?? 'Message'));
+
+function Quote({
+  message,
+  mine,
+}: {
+  message: { sender: 'patient' | 'doctor'; body: string | null; file: { name: string; type: string } | null };
+  mine: boolean;
+}) {
+  return (
+    <View style={[styles.quote, mine ? styles.quoteMine : styles.quoteTheirs]}>
+      <AppText
+        variant="caption"
+        weight="semibold"
+        style={{ color: mine ? colors.textInverse : colors.primary }}
+      >
+        {message.sender === 'patient' ? 'You' : 'Doctor'}
+      </AppText>
+      <AppText
+        variant="caption"
+        numberOfLines={2}
+        style={{ color: mine ? colors.textInverseMuted : colors.textMuted }}
+      >
+        {quoteText(message)}
+      </AppText>
+    </View>
+  );
+}
+
+function ChatSkeleton() {
+  return (
+    <View style={styles.skeleton} accessibilityLabel="Loading messages" accessibilityRole="progressbar">
+      {[62, 48, 70, 40, 56].map((width, index) => (
+        <View key={index} style={[styles.bubbleRow, index % 2 ? styles.right : styles.left]}>
+          <View style={[styles.skeletonBubble, { width: `${width}%` }]}>
+            <SkeletonBlock height={14} />
+            <SkeletonBlock width="60%" height={14} />
+          </View>
+        </View>
+      ))}
+    </View>
+  );
+}
+
 function merge(...lists: ChatMessage[][]) {
   const byId = new Map<string, ChatMessage>();
   for (const list of lists) for (const m of list) byId.set(m.id, m);
@@ -44,12 +90,14 @@ function Bubble({
   opening,
   onOpen,
   loadUrl,
+  onReply,
 }: {
   message: ChatMessage;
   showDay: boolean;
   opening: boolean;
   onOpen: (m: ChatMessage) => void;
   loadUrl: (m: ChatMessage) => Promise<string>;
+  onReply: (m: ChatMessage) => void;
 }) {
   const mine = message.sender === 'patient';
   const voice = message.file?.type.startsWith('audio/') ?? false;
@@ -64,40 +112,43 @@ function Bubble({
           </AppText>
         </View>
       ) : null}
-      <View style={[styles.bubbleRow, mine ? styles.right : styles.left]}>
-        <View
-          style={[styles.bubble, mine ? styles.mine : styles.theirs]}
-          accessible
-          accessibilityLabel={`${mine ? 'You' : 'Doctor'}: ${message.body ?? (voice ? 'Voice message' : (message.file?.name ?? ''))}, ${clock(message.createdAt)}`}
-        >
-          {voice ? (
-            <VoiceNote mine={mine} load={() => loadUrl(message)} />
-          ) : message.file ? (
-            <Pressable
-              accessibilityRole="button"
-              accessibilityLabel={`Open ${message.file.name}`}
-              onPress={() => onOpen(message)}
-              style={[styles.file, { backgroundColor: mine ? colors.onPrimarySoft : colors.surfaceMuted }]}
-            >
-              {opening ? <ActivityIndicator color={fg} /> : <FileIcon size={icon.md} color={fg} />}
-              <AppText variant="label" numberOfLines={2} style={[styles.flex, { color: fg }]}>
-                {message.file.name}
-              </AppText>
-            </Pressable>
-          ) : null}
-          {message.body ? (
-            <AppText selectable style={{ color: fg }}>
-              {message.body}
-            </AppText>
-          ) : null}
-          <AppText
-            variant="caption"
-            style={[styles.time, { color: mine ? colors.textInverseMuted : colors.textMuted }]}
+      <SwipeToReply onReply={() => onReply(message)}>
+        <View style={[styles.bubbleRow, mine ? styles.right : styles.left]}>
+          <View
+            style={[styles.bubble, mine ? styles.mine : styles.theirs]}
+            accessible
+            accessibilityLabel={`${mine ? 'You' : 'Doctor'}: ${message.body ?? (voice ? 'Voice message' : (message.file?.name ?? ''))}, ${clock(message.createdAt)}`}
           >
-            {clock(message.createdAt)}
-          </AppText>
+            {message.replyTo ? <Quote message={message.replyTo} mine={mine} /> : null}
+            {voice ? (
+              <VoiceNote mine={mine} load={() => loadUrl(message)} durationMs={message.file?.durationMs} />
+            ) : message.file ? (
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel={`Open ${message.file.name}`}
+                onPress={() => onOpen(message)}
+                style={[styles.file, { backgroundColor: mine ? colors.onPrimarySoft : colors.surfaceMuted }]}
+              >
+                {opening ? <ActivityIndicator color={fg} /> : <FileIcon size={icon.md} color={fg} />}
+                <AppText variant="label" numberOfLines={2} style={[styles.flex, { color: fg }]}>
+                  {message.file.name}
+                </AppText>
+              </Pressable>
+            ) : null}
+            {message.body ? (
+              <AppText selectable style={{ color: fg }}>
+                {message.body}
+              </AppText>
+            ) : null}
+            <AppText
+              variant="caption"
+              style={[styles.time, { color: mine ? colors.textInverseMuted : colors.textMuted }]}
+            >
+              {clock(message.createdAt)}
+            </AppText>
+          </View>
         </View>
-      </View>
+      </SwipeToReply>
     </View>
   );
 }
@@ -123,6 +174,8 @@ export default function ChatScreen() {
   const [text, setText] = useState('');
   const [file, setFile] = useState<UploadableFile | null>(null);
   const [openingId, setOpeningId] = useState<string | null>(null);
+  const [replyTo, setReplyTo] = useState<ChatMessage | null>(null);
+  const input = useRef<TextInput>(null);
   const { frame, inset } = useKeyboardInset();
   const voice = useVoiceRecorder();
   const finishing = useRef(false);
@@ -174,9 +227,10 @@ export default function ChatScreen() {
     const body = text.trim();
     if (sending || (!body && !file)) return;
     try {
-      await sendMessage({ doctorId, body, file }).unwrap();
+      await sendMessage({ doctorId, body, file, replyToId: replyTo?.id ?? null }).unwrap();
       setText('');
       setFile(null);
+      setReplyTo(null);
     } catch (error) {
       Alert.alert('Message not sent', errorMessage(error));
     }
@@ -193,7 +247,15 @@ export default function ChatScreen() {
       return;
     }
     try {
-      await sendMessage({ doctorId, body: '', file: recorded }).unwrap();
+      await sendMessage({
+        doctorId,
+        body: '',
+        file: recorded.file,
+        durationMs: recorded.durationMs,
+        replyToId: replyTo?.id ?? null,
+      })
+        .unwrap()
+        .then(() => setReplyTo(null));
     } catch (error) {
       Alert.alert('Voice message not sent', errorMessage(error));
     }
@@ -261,6 +323,8 @@ export default function ChatScreen() {
       <View ref={frame} style={[styles.root, { paddingBottom: inset }]}>
         {latest.isError && !latest.data ? (
           <ErrorState error={latest.error} onRetry={latest.refetch} retrying={latest.isFetching} />
+        ) : latest.isLoading ? (
+          <ChatSkeleton />
         ) : (
           <FlatList
             inverted
@@ -276,6 +340,10 @@ export default function ChatScreen() {
                   opening={openingId === item.id}
                   onOpen={(m) => void open(m)}
                   loadUrl={loadUrl}
+                  onReply={(m) => {
+                    setReplyTo(m);
+                    input.current?.focus();
+                  }}
                 />
               );
             }}
@@ -303,6 +371,21 @@ export default function ChatScreen() {
         )}
 
         <View style={styles.composer}>
+          {replyTo ? (
+            <View style={styles.replying}>
+              <View style={styles.flex}>
+                <Quote message={replyTo} mine={false} />
+              </View>
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel="Cancel the reply"
+                hitSlop={8}
+                onPress={() => setReplyTo(null)}
+              >
+                <X size={icon.md} color={colors.textMuted} />
+              </Pressable>
+            </View>
+          ) : null}
           {file ? (
             <View style={styles.pending}>
               <ImagePlus size={icon.sm} color={colors.textMuted} />
@@ -363,6 +446,7 @@ export default function ChatScreen() {
                 <ImagePlus size={icon.lg} color={colors.textMuted} />
               </Pressable>
               <TextInput
+                ref={input}
                 value={text}
                 onChangeText={setText}
                 placeholder="Write a message"
@@ -516,4 +600,21 @@ const styles = StyleSheet.create({
     backgroundColor: colors.dangerSoft,
   },
   recDot: { width: 10, height: 10, borderRadius: radius.pill, backgroundColor: colors.danger },
+  quote: {
+    paddingHorizontal: space.sm,
+    paddingVertical: space.xs,
+    borderLeftWidth: 3,
+    borderRadius: radius.sm,
+    gap: space.xxs,
+  },
+  quoteMine: { backgroundColor: colors.onPrimarySoft, borderLeftColor: colors.textInverse },
+  quoteTheirs: { backgroundColor: colors.surfaceMuted, borderLeftColor: colors.primary },
+  replying: { flexDirection: 'row', alignItems: 'center', gap: space.sm },
+  skeleton: { flex: 1, justifyContent: 'flex-end', gap: space.md, padding: space.md },
+  skeletonBubble: {
+    gap: space.xs,
+    padding: space.md,
+    borderRadius: radius.lg,
+    backgroundColor: colors.surface,
+  },
 });

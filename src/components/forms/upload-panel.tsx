@@ -1,4 +1,4 @@
-import { FileText, ImageIcon, RotateCcw, Upload, X } from 'lucide-react-native';
+import { FileText, ImageIcon, RotateCcw, ScanLine, Upload, X } from 'lucide-react-native';
 import { useRef, useState } from 'react';
 import { ActivityIndicator, Alert, Pressable, StyleSheet, View } from 'react-native';
 import { AppText } from '@/components/ui/app-text';
@@ -9,12 +9,13 @@ import { TextField } from '@/components/ui/text-field';
 import { errorMessage } from '@/lib/errors';
 import { formatSize } from '@/lib/format';
 import { colors, icon, radius, space, touch } from '@/theme/tokens';
-import { useUploadDocumentMutation } from '@/redux/features/documents';
+import { type DocumentType, useUploadDocumentMutation } from '@/redux/features/documents';
 import type { UploadableFile } from '@/types/api';
 import { MAX_UPLOAD_BYTES, pickDocumentFile, pickImageFile, validateFile } from '@/utils/files';
 
 export function UploadPanel() {
   const [file, setFile] = useState<UploadableFile | null>(null);
+  const [type, setType] = useState<DocumentType>('medical_record');
   const [title, setTitle] = useState('');
   const [problem, setProblem] = useState<string | null>(null);
   const [upload, { isLoading: busy, error, reset }] = useUploadDocumentMutation();
@@ -27,19 +28,39 @@ export function UploadPanel() {
     reset();
   };
 
-  const pickDocument = async () => {
-    const picked = await pickDocumentFile();
-    if (picked) choose(picked);
-  };
-
-  const pickImage = async () => {
-    const picked = await pickImageFile(false);
-    if (picked) choose(picked);
-  };
+  const pick = (kind: DocumentType) =>
+    Alert.alert(
+      kind === 'imaging' ? 'Add imaging' : 'Add a PDF or file',
+      kind === 'imaging'
+        ? 'Scans such as ultrasound, mammogram or DEXA. They are kept in your medical records.'
+        : 'Lab or blood test reports. Your doctor uses them for your results.',
+      [
+        {
+          text: 'Files',
+          onPress: () =>
+            void pickDocumentFile().then((picked) => {
+              if (!picked) return;
+              setType(kind);
+              choose(picked);
+            }),
+        },
+        {
+          text: 'Photos',
+          onPress: () =>
+            void pickImageFile(false).then((picked) => {
+              if (!picked) return;
+              setType(kind);
+              choose(picked);
+            }),
+        },
+        { text: 'Cancel', style: 'cancel' },
+      ],
+      { cancelable: true },
+    );
 
   const start = async () => {
     if (!file || busy) return;
-    const request = upload({ file, title: title.trim() });
+    const request = upload({ file, title: title.trim(), type });
     handle.current = request;
     try {
       await request.unwrap();
@@ -65,8 +86,8 @@ export function UploadPanel() {
 
       {!file ? (
         <View style={styles.pickers}>
-          <PickButton label="PDF or file" icon={FileText} onPress={() => void pickDocument()} />
-          <PickButton label="Photo" icon={ImageIcon} onPress={() => void pickImage()} />
+          <PickButton label="PDF or file" icon={FileText} onPress={() => pick('medical_record')} />
+          <PickButton label="Imaging" icon={ScanLine} onPress={() => pick('imaging')} />
         </View>
       ) : (
         <View style={styles.picked}>
@@ -79,11 +100,10 @@ export function UploadPanel() {
             <AppText variant="label" numberOfLines={2}>
               {file.name}
             </AppText>
-            {file.size ? (
-              <AppText variant="caption" tone="muted">
-                {formatSize(file.size)}
-              </AppText>
-            ) : null}
+            <AppText variant="caption" tone="muted">
+              {type === 'imaging' ? 'Imaging' : 'PDF or file'}
+              {file.size ? ` · ${formatSize(file.size)}` : ''}
+            </AppText>
           </View>
           {!busy ? (
             <Pressable

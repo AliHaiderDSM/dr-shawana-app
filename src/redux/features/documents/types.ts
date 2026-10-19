@@ -18,7 +18,10 @@ export interface MedicalDocument {
   files: DocumentFile[];
 }
 
+export type DocumentType = MedicalDocument['type'];
+
 export interface UploadDocumentInput {
   file: UploadableFile;
   title: string;
+  type: DocumentType;
 }

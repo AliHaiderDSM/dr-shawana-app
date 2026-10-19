@@ -17,13 +17,24 @@ export const documentsApi = baseApi.injectEndpoints({
       keepUnusedDataFor: 0,
     }),
     uploadDocument: build.mutation<MedicalDocument | null, UploadDocumentInput>({
-      query: ({ file, title }) => fileUpload('/patient/documents', 'files', file, title ? { title } : {}),
+      query: ({ file, title, type }) =>
+        fileUpload('/patient/documents', 'files', file, { type, ...(title ? { title } : {}) }),
       transformResponse: unwrapData<MedicalDocument | null>,
+      invalidatesTags: (_result, error) =>
+        error ? [] : [{ type: 'Document', id: LIST }, { type: 'MedicalHistory', id: LIST }, 'Overview'],
+    }),
+    deleteDocument: build.mutation<void, string>({
+      query: (id) => ({ url: `/patient/documents/${encodeURIComponent(id)}`, method: 'DELETE' }),
       invalidatesTags: (_result, error) =>
         error ? [] : [{ type: 'Document', id: LIST }, { type: 'MedicalHistory', id: LIST }, 'Overview'],
     }),
   }),
 });
 
-export const { useGetDocumentsQuery, useLazyGetDocumentUrlQuery, useUploadDocumentMutation } = documentsApi;
-export type { DocumentFile, MedicalDocument, UploadDocumentInput } from './types';
+export const {
+  useGetDocumentsQuery,
+  useLazyGetDocumentUrlQuery,
+  useUploadDocumentMutation,
+  useDeleteDocumentMutation,
+} = documentsApi;
+export type { DocumentFile, DocumentType, MedicalDocument, UploadDocumentInput } from './types';

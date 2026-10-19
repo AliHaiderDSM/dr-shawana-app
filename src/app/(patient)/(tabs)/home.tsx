@@ -4,7 +4,6 @@ import {
   CalendarDays,
   CalendarPlus,
   FileText,
-  History,
   MessageSquarePlus,
   Pill,
   ShieldCheck,
@@ -28,7 +27,6 @@ import { useGetChatUnreadQuery } from '@/redux/features/chat';
 import { useGetOverviewQuery } from '@/redux/features/patient';
 
 const QUICK: { label: string; icon: LucideIcon; href: Href }[] = [
-  { label: 'Medical History', icon: History, href: '/history' },
   { label: 'Prescriptions', icon: Pill, href: '/prescriptions' },
   { label: 'Medical records', icon: FileText, href: '/documents' },
   { label: 'Appointments', icon: CalendarDays, href: '/appointments' },
@@ -216,25 +214,6 @@ export default function HomeScreen() {
             </>
           ) : null}
 
-          {o.recentVisits.length ? (
-            <>
-              <SectionHeader
-                title="Recent visits"
-                actionLabel="History"
-                onAction={() => router.push('/history')}
-              />
-              <View style={styles.list}>
-                {o.recentVisits.map((visit) => (
-                  <AppointmentCard
-                    key={visit.id}
-                    appointment={visit}
-                    onPress={() => router.push(`/appointments/${visit.id}`)}
-                  />
-                ))}
-              </View>
-            </>
-          ) : null}
-
           <Card>
             <AppText weight="semibold">Need help from the clinic?</AppText>
             <AppText tone="muted" variant="label">
@@ -330,5 +309,4 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  list: { gap: space.md },
 });
