@@ -1,4 +1,5 @@
-import { Building2, LogOut, Stethoscope, Users } from 'lucide-react-native';
+import { router } from 'expo-router';
+import { Building2, KeyRound, LogOut, Mail, Pencil, Phone, Stethoscope, Users } from 'lucide-react-native';
 import { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { Initials } from '@/components/doctor/parts';
@@ -12,11 +13,12 @@ import { initials } from '@/lib/format';
 import { useAppDispatch } from '@/redux/hooks';
 import { space } from '@/theme/tokens';
 import { signOut } from '@/redux/features/auth';
-import { useGetDoctorHomeQuery } from '@/redux/features/doctor';
+import { useGetDoctorHomeQuery, useGetDoctorProfileQuery } from '@/redux/features/doctor';
 
 export default function DoctorProfileScreen() {
   const dispatch = useAppDispatch();
   const home = useGetDoctorHomeQuery();
+  const profile = useGetDoctorProfileQuery().data;
   const [leaving, setLeaving] = useState(false);
   const d = home.data?.doctor;
 
@@ -50,17 +52,31 @@ export default function DoctorProfileScreen() {
           <Card>
             <InfoRow icon={Stethoscope} label="Role" value="Doctor" />
             <InfoRow icon={Building2} label="Branch" value={d.branch} />
+            <InfoRow icon={Phone} label="Phone" value={profile?.phone || 'Not added'} />
+            {profile?.email ? <InfoRow icon={Mail} label="Email" value={profile.email} /> : null}
             <InfoRow
               icon={Users}
               label="Patients"
               value={`${home.data?.counts.patients ?? 0} in every branch`}
             />
           </Card>
+          <Button
+            label="Edit profile"
+            icon={Pencil}
+            variant="secondary"
+            onPress={() => router.push('/doctor/profile-edit')}
+          />
           <SectionHeader title="Account" />
           <AppText variant="label" tone="muted">
             Prescriptions and the full consultation form stay on the clinic dashboard. Here you chat with
             patients, read their records and write clinical remarks.
           </AppText>
+          <Button
+            label="Change password"
+            icon={KeyRound}
+            variant="secondary"
+            onPress={() => router.push('/doctor/password')}
+          />
           <Button label="Log out" icon={LogOut} variant="danger" loading={leaving} onPress={logout} />
         </>
       )}

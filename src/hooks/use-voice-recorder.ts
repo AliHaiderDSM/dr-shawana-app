@@ -1,4 +1,5 @@
 import {
+  getRecordingPermissionsAsync,
   RecordingPresets,
   requestRecordingPermissionsAsync,
   setAudioModeAsync,
@@ -6,12 +7,32 @@ import {
   useAudioRecorderState,
 } from 'expo-audio';
 import { useState } from 'react';
-import { Alert } from 'react-native';
+import { Alert, Linking } from 'react-native';
 import type { UploadableFile } from '@/types/api';
 import { VOICE_TYPE } from '@/utils/files';
 
 export const MAX_VOICE_SECONDS = 300;
 const MIN_VOICE_MS = 800;
+
+async function microphoneAllowed() {
+  const current = await getRecordingPermissionsAsync();
+  if (current.granted) return true;
+  const asked = current.canAskAgain ? await requestRecordingPermissionsAsync() : current;
+  if (asked.granted) return true;
+  Alert.alert(
+    'Allow the microphone',
+    asked.canAskAgain
+      ? 'DSM Clinic needs the microphone to record a voice message. Tap the mic again and choose Allow.'
+      : 'The microphone is turned off for DSM Clinic. Open Settings, tap Permissions and allow the Microphone.',
+    asked.canAskAgain
+      ? [{ text: 'OK' }]
+      : [
+          { text: 'Not now', style: 'cancel' },
+          { text: 'Open settings', onPress: () => void Linking.openSettings() },
+        ],
+  );
+  return false;
+}
 
 export function useVoiceRecorder() {
   const recorder = useAudioRecorder(RecordingPresets.HIGH_QUALITY);
@@ -19,14 +40,7 @@ export function useVoiceRecorder() {
   const [recording, setRecording] = useState(false);
 
   const start = async () => {
-    const permission = await requestRecordingPermissionsAsync();
-    if (!permission.granted) {
-      Alert.alert(
-        'Microphone not allowed',
-        'Allow microphone access in your phone settings to send a voice message.',
-      );
-      return;
-    }
+    if (!(await microphoneAllowed().catch(() => false))) return;
     try {
       await setAudioModeAsync({ allowsRecording: true, playsInSilentMode: true });
       await recorder.prepareToRecordAsync();

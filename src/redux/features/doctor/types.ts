@@ -102,6 +102,43 @@ export interface PatientFile {
   prescriptions: PatientFilePrescription[];
   remarks: PatientFileRemark[];
   records: PatientFileRecord[];
+  bloodWork?: BloodWork;
+}
+
+export type BloodTest =
+  | 'fsh'
+  | 'estradiol'
+  | 'testosterone_free'
+  | 'testosterone_total'
+  | 'dhea_s'
+  | 'vit_d3'
+  | 'tsh'
+  | 'ferritin'
+  | 'b12';
+
+export interface BloodWork {
+  dates: string[];
+  tests: { test: BloodTest; unit: string; points: { date: string; value: number }[] }[];
+}
+
+export interface DoctorProfile {
+  id: string;
+  displayName: string;
+  details: string | null;
+  branch: string;
+  phone: string | null;
+  firstName: string;
+  lastName: string;
+  email: string;
+  username: string;
+}
+
+export interface UpdateDoctorProfileInput {
+  displayName: string;
+  details: string | null;
+  phone: string | null;
+  firstName: string;
+  lastName: string;
 }
 
 export interface SendDoctorMessageInput {

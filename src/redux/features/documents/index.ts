@@ -28,6 +28,14 @@ export const documentsApi = baseApi.injectEndpoints({
       invalidatesTags: (_result, error) =>
         error ? [] : [{ type: 'Document', id: LIST }, { type: 'MedicalHistory', id: LIST }, 'Overview'],
     }),
+    deleteDocumentFile: build.mutation<void, string>({
+      query: (fileId) => ({
+        url: `/patient/documents/files/${encodeURIComponent(fileId)}`,
+        method: 'DELETE',
+      }),
+      invalidatesTags: (_result, error) =>
+        error ? [] : [{ type: 'Document', id: LIST }, { type: 'MedicalHistory', id: LIST }, 'Overview'],
+    }),
   }),
 });
 
@@ -36,5 +44,6 @@ export const {
   useLazyGetDocumentUrlQuery,
   useUploadDocumentMutation,
   useDeleteDocumentMutation,
+  useDeleteDocumentFileMutation,
 } = documentsApi;
 export type { DocumentFile, DocumentType, MedicalDocument, UploadDocumentInput } from './types';

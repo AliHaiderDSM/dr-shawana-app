@@ -3,7 +3,14 @@ import { baseApi, unwrapData } from '../../api/baseApi';
 import { fileUpload } from '../../api/formData';
 import { LIST } from '../../api/tagTypes';
 import type { ChatPage, ChatMessage, ChatRealtime, PushTokenInput } from '../chat/types';
-import type { DoctorHome, DoctorPatient, PatientFile, SendDoctorMessageInput } from './types';
+import type {
+  DoctorHome,
+  DoctorPatient,
+  DoctorProfile,
+  PatientFile,
+  SendDoctorMessageInput,
+  UpdateDoctorProfileInput,
+} from './types';
 
 const threadPath = (conversationId: string) => `/branch/chats/${encodeURIComponent(conversationId)}`;
 
@@ -18,6 +25,25 @@ export const doctorApi = baseApi.injectEndpoints({
       query: (search) => ({ url: '/doctor/patients', params: search ? { search } : undefined }),
       transformResponse: unwrapData<DoctorPatient[]>,
       providesTags: [{ type: 'DoctorPatient', id: LIST }],
+    }),
+    getDoctorProfile: build.query<DoctorProfile, void>({
+      query: () => '/doctor/profile',
+      transformResponse: unwrapData<DoctorProfile>,
+      providesTags: [{ type: 'DoctorProfile', id: LIST }],
+    }),
+    updateDoctorProfile: build.mutation<DoctorProfile, UpdateDoctorProfileInput>({
+      query: (body) => ({ url: '/doctor/profile', method: 'PUT', body }),
+      transformResponse: unwrapData<DoctorProfile>,
+      invalidatesTags: (_r, error) =>
+        error
+          ? []
+          : [
+              { type: 'DoctorProfile', id: LIST },
+              { type: 'DoctorHome', id: LIST },
+            ],
+    }),
+    changeDoctorPassword: build.mutation<void, { currentPassword: string; newPassword: string }>({
+      query: (body) => ({ url: '/auth/change-password', method: 'POST', body }),
     }),
     getDoctorPatientFile: build.query<PatientFile, string>({
       query: (patientId) => `/doctor/patients/${encodeURIComponent(patientId)}`,
@@ -106,6 +132,9 @@ export const {
   useOpenDoctorChatMutation,
   useLazyGetDoctorRecordUrlQuery,
   useSaveDoctorRemarksMutation,
+  useGetDoctorProfileQuery,
+  useUpdateDoctorProfileMutation,
+  useChangeDoctorPasswordMutation,
   useSaveDoctorPushTokenMutation,
   useGetDoctorThreadQuery,
   useLazyGetDoctorThreadQuery,

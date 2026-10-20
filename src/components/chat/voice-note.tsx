@@ -20,13 +20,23 @@ export function VoiceNote({
   const status = useAudioPlayerStatus(player);
   const [loaded, setLoaded] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [measured, setMeasured] = useState(0);
+  const [finished, setFinished] = useState(false);
   const fg = mine ? colors.textInverse : colors.primary;
   const track = mine ? colors.onPrimarySoft : colors.surfaceMuted;
   const fill = mine ? colors.textInverse : colors.primary;
+  const reported = Number.isFinite(status.duration) && status.duration > 0 ? status.duration : 0;
+  if (reported > measured) setMeasured(reported);
+  const [endSignal, setEndSignal] = useState(false);
+  if (status.didJustFinish !== endSignal) {
+    setEndSignal(status.didJustFinish);
+    if (status.didJustFinish) setFinished(true);
+  }
   const known = durationMs ? durationMs / 1000 : 0;
-  const length = known || (status.duration > status.currentTime ? status.duration : 0);
-  const progress = status.didJustFinish ? 1 : length > 0 ? Math.min(1, status.currentTime / length) : 0;
-  const shown = length || status.duration;
+  const length = Math.max(known, measured);
+  const atEnd = finished && !status.playing;
+  const progress = atEnd ? 1 : length > 0 ? Math.min(1, status.currentTime / length) : 0;
+  const moving = status.playing || (progress > 0 && progress < 1);
   const busy = loading || (loaded && status.isBuffering && !status.playing);
 
   const toggle = async () => {
@@ -40,9 +50,10 @@ export function VoiceNote({
         setLoading(true);
         player.replace({ uri: await load() });
         setLoaded(true);
-      } else if (status.duration > 0 && status.currentTime >= Math.max(status.duration, known) - 0.25) {
+      } else if (finished || (length > 0 && status.currentTime >= length - 0.25)) {
         await player.seekTo(0);
       }
+      setFinished(false);
       player.play();
     } catch (error) {
       Alert.alert('Could not play the voice message', errorMessage(error));
@@ -73,11 +84,7 @@ export function VoiceNote({
           <View style={[styles.fill, { backgroundColor: fill, width: `${Math.round(progress * 100)}%` }]} />
         </View>
         <AppText variant="caption" style={{ color: mine ? colors.textInverseMuted : colors.textMuted }}>
-          {loaded && shown > 0
-            ? formatDuration(status.playing || (progress > 0 && progress < 1) ? status.currentTime : shown)
-            : known > 0
-              ? formatDuration(known)
-              : 'Voice message'}
+          {length > 0 ? formatDuration(moving && !atEnd ? status.currentTime : length) : 'Voice message'}
         </AppText>
       </View>
     </View>

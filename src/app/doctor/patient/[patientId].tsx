@@ -5,6 +5,7 @@ import {
   ClipboardList,
   FileImage,
   FileText,
+  FlaskConical,
   FolderHeart,
   MessageCircle,
   Pencil,
@@ -14,6 +15,7 @@ import {
 } from 'lucide-react-native';
 import { useState, type ReactNode } from 'react';
 import { ActivityIndicator, Alert, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { BloodWorkView } from '@/components/doctor/blood-work';
 import { openChatWith } from '@/components/doctor/open-chat';
 import { Initials, STATUS_TONE } from '@/components/doctor/parts';
 import { CardSkeleton, EmptyState, ErrorState } from '@/components/feedback/states';
@@ -28,6 +30,7 @@ import { formatDate, formatDay, formatTime, initials } from '@/lib/format';
 import { htmlToMarkup } from '@/lib/rich-text';
 import { colors, icon, radius, shadow, space, touch } from '@/theme/tokens';
 import {
+  type BloodWork,
   type PatientFile,
   useGetDoctorPatientFileQuery,
   useLazyGetDoctorRecordUrlQuery,
@@ -217,7 +220,7 @@ function Remarks({ file }: { file: PatientFile }) {
   );
 }
 
-function Records({ file }: { file: PatientFile }) {
+function RecordFiles({ file }: { file: PatientFile }) {
   const [getUrl] = useLazyGetDoctorRecordUrlQuery();
   const [opening, setOpening] = useState<string | null>(null);
   const open = async (fileId: string) => {
@@ -284,6 +287,49 @@ function Records({ file }: { file: PatientFile }) {
         </Entry>
       ))}
     </>
+  );
+}
+
+type RecordsView = 'files' | 'blood';
+
+const NO_BLOOD_WORK: BloodWork = { dates: [], tests: [] };
+
+function Records({ file }: { file: PatientFile }) {
+  const [view, setView] = useState<RecordsView>('files');
+  const blood = file.bloodWork ?? NO_BLOOD_WORK;
+  const fileCount = file.records.reduce((sum, r) => sum + r.files.length, 0);
+  const options: { key: RecordsView; label: string; icon: typeof FileText; count: number }[] = [
+    { key: 'files', label: 'Files', icon: FileText, count: fileCount },
+    { key: 'blood', label: 'Blood work', icon: FlaskConical, count: blood.dates.length },
+  ];
+  return (
+    <View style={styles.records}>
+      <View style={styles.segment} accessibilityRole="tablist">
+        {options.map((o) => {
+          const on = view === o.key;
+          const Icon = o.icon;
+          return (
+            <Pressable
+              key={o.key}
+              accessibilityRole="tab"
+              accessibilityState={{ selected: on }}
+              accessibilityLabel={`${o.label}, ${o.count}`}
+              onPress={() => setView(o.key)}
+              style={[styles.segmentItem, on && styles.segmentOn]}
+            >
+              <Icon size={icon.sm} color={on ? colors.primary : colors.textMuted} />
+              <AppText variant="label" weight="semibold" tone={on ? 'primary' : 'muted'}>
+                {o.label}
+              </AppText>
+              <AppText variant="caption" weight="bold" tone={on ? 'primary' : 'muted'}>
+                {o.count}
+              </AppText>
+            </Pressable>
+          );
+        })}
+      </View>
+      {view === 'files' ? <RecordFiles file={file} /> : <BloodWorkView data={blood} />}
+    </View>
   );
 }
 
@@ -499,4 +545,22 @@ const styles = StyleSheet.create({
     backgroundColor: colors.surfaceMuted,
   },
   filePressed: { opacity: 0.8 },
+  records: { gap: space.lg },
+  segment: {
+    flexDirection: 'row',
+    padding: space.xs,
+    gap: space.xs,
+    borderRadius: radius.md,
+    backgroundColor: colors.surfaceMuted,
+  },
+  segmentItem: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: space.xs,
+    minHeight: 40,
+    borderRadius: radius.sm,
+  },
+  segmentOn: { backgroundColor: colors.surface, ...shadow },
 });

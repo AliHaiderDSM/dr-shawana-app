@@ -137,37 +137,60 @@ export function FileButton({
   file,
   opening,
   onOpen,
+  onDelete,
+  deleting = false,
 }: {
   file: DocumentFile;
   opening: boolean;
   onOpen: (file: DocumentFile) => void;
+  onDelete?: (file: DocumentFile) => void;
+  deleting?: boolean;
 }) {
   const Icon = file.contentType.startsWith('image/') ? FileImage : FileText;
   return (
-    <Pressable
-      accessibilityRole="button"
-      accessibilityLabel={`Open ${file.name}`}
-      accessibilityState={{ busy: opening }}
-      onPress={() => onOpen(file)}
-      style={({ pressed }) => [styles.file, pressed && styles.filePressed]}
-    >
-      <Icon size={icon.md} color={colors.primary} />
-      <View style={styles.flex}>
-        <AppText variant="label" numberOfLines={2}>
-          {file.name}
-        </AppText>
-        {file.sizeBytes ? (
-          <AppText variant="caption" tone="muted">
-            {formatSize(file.sizeBytes)}
+    <View style={styles.fileRow}>
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel={`Open ${file.name}`}
+        accessibilityState={{ busy: opening }}
+        onPress={() => onOpen(file)}
+        style={({ pressed }) => [styles.file, styles.flex, pressed && styles.filePressed]}
+      >
+        <Icon size={icon.md} color={colors.primary} />
+        <View style={styles.flex}>
+          <AppText variant="label" numberOfLines={2}>
+            {file.name}
           </AppText>
-        ) : null}
-      </View>
-      {opening ? (
-        <ActivityIndicator color={colors.primary} />
-      ) : (
-        <ExternalLink size={icon.md} color={colors.textMuted} />
-      )}
-    </Pressable>
+          {file.sizeBytes ? (
+            <AppText variant="caption" tone="muted">
+              {formatSize(file.sizeBytes)}
+            </AppText>
+          ) : null}
+        </View>
+        {opening ? (
+          <ActivityIndicator color={colors.primary} />
+        ) : (
+          <ExternalLink size={icon.md} color={colors.textMuted} />
+        )}
+      </Pressable>
+      {onDelete ? (
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel={`Delete ${file.name}`}
+          accessibilityState={{ busy: deleting }}
+          disabled={deleting}
+          onPress={() => onDelete(file)}
+          hitSlop={4}
+          style={({ pressed }) => [styles.fileDelete, pressed && styles.fileDeletePressed]}
+        >
+          {deleting ? (
+            <ActivityIndicator color={colors.danger} />
+          ) : (
+            <Trash2 size={icon.md} color={colors.danger} />
+          )}
+        </Pressable>
+      ) : null}
+    </View>
   );
 }
 
@@ -176,14 +199,15 @@ export function DocumentCard({
   openingId,
   onOpen,
   onDelete,
-  deleting = false,
+  deletingId = null,
 }: {
   document: MedicalDocument;
   openingId: string | null;
   onOpen: (file: DocumentFile) => void;
-  onDelete?: (document: MedicalDocument) => void;
-  deleting?: boolean;
+  onDelete?: (file: DocumentFile, document: MedicalDocument) => void;
+  deletingId?: string | null;
 }) {
+  const canDelete = Boolean(onDelete && d.uploadedByPatient);
   return (
     <Card>
       <View style={styles.headerRow}>
@@ -194,21 +218,6 @@ export function DocumentCard({
           label={d.uploadedByPatient ? 'Uploaded by you' : 'From clinic'}
           tone={d.uploadedByPatient ? 'info' : 'primary'}
         />
-        {onDelete && d.uploadedByPatient ? (
-          <Pressable
-            accessibilityRole="button"
-            accessibilityLabel="Delete this report"
-            onPress={() => onDelete(d)}
-            disabled={deleting}
-            hitSlop={8}
-          >
-            {deleting ? (
-              <ActivityIndicator color={colors.danger} />
-            ) : (
-              <Trash2 size={icon.md} color={colors.danger} />
-            )}
-          </Pressable>
-        ) : null}
       </View>
       <Meta
         icon={CalendarDays}
@@ -216,7 +225,14 @@ export function DocumentCard({
       />
       <View style={styles.files}>
         {d.files.map((file) => (
-          <FileButton key={file.id} file={file} opening={openingId === file.id} onOpen={onOpen} />
+          <FileButton
+            key={file.id}
+            file={file}
+            opening={openingId === file.id}
+            onOpen={onOpen}
+            onDelete={canDelete && onDelete ? (f) => onDelete(f, d) : undefined}
+            deleting={deletingId === file.id}
+          />
         ))}
       </View>
     </Card>
@@ -281,4 +297,14 @@ const styles = StyleSheet.create({
     backgroundColor: colors.background,
   },
   filePressed: { backgroundColor: colors.surfaceMuted },
+  fileRow: { flexDirection: 'row', alignItems: 'center', gap: space.sm },
+  fileDelete: {
+    width: touch.iconButton,
+    height: touch.iconButton,
+    borderRadius: radius.md,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: colors.dangerSoft,
+  },
+  fileDeletePressed: { opacity: 0.75 },
 });
