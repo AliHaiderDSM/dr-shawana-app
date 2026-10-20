@@ -145,7 +145,7 @@ function Bubble({
           </AppText>
         </View>
       ) : null}
-      <SwipeToReply onReply={() => onReply(message)}>
+      <SwipeToReply onReply={() => onReply(message)} fromRight={mine}>
         <View style={[styles.bubbleRow, mine ? styles.right : styles.left]}>
           <View
             style={[styles.bubble, mine ? styles.mine : styles.theirs]}

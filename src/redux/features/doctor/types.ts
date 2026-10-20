@@ -63,6 +63,7 @@ export interface PatientFilePrescription {
   followupDate: string | null;
   planTreatment: string | null;
   doctor: string | null;
+  branch?: string | null;
   items: { groupName: string; name: string; dose: string | null; instructions: string | null }[];
 }
 
@@ -71,6 +72,7 @@ export interface PatientFileRemark {
   date: string;
   appointmentNo: number;
   doctor: string | null;
+  branch?: string | null;
   remarks: string | null;
   updatedAt: string | null;
   editable: boolean;
@@ -82,6 +84,8 @@ export interface PatientFileRecord {
   date: string;
   note: string | null;
   uploadedByPatient: boolean;
+  branch?: string | null;
+  createdAt?: string | null;
   files: { id: string; name: string; contentType: string }[];
 }
 

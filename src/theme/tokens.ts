@@ -30,6 +30,8 @@ export const colors = {
   heroAccent: 'rgba(255, 255, 255, 0.08)',
 } as const;
 
+export const chart = ['#0B6E66', '#2F6FD0', '#C98A12', '#B23D8F', '#3E9B4F'] as const;
+
 export const space = {
   xxs: 2,
   xs: 4,

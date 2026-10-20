@@ -1,6 +1,7 @@
 import { router, useLocalSearchParams } from 'expo-router';
 import * as WebBrowser from 'expo-web-browser';
 import {
+  Building2,
   CalendarDays,
   ClipboardList,
   FileImage,
@@ -12,6 +13,7 @@ import {
   Pill,
   Ruler,
   Scale,
+  Stethoscope,
 } from 'lucide-react-native';
 import { useState, type ReactNode } from 'react';
 import { ActivityIndicator, Alert, Pressable, ScrollView, StyleSheet, View } from 'react-native';
@@ -27,6 +29,7 @@ import { StatusBadge } from '@/components/ui/status-badge';
 import { useRefresh } from '@/hooks/use-refresh';
 import { errorMessage } from '@/lib/errors';
 import { formatDate, formatDay, formatTime, initials } from '@/lib/format';
+import { groupRecords } from '@/lib/record-groups';
 import { htmlToMarkup } from '@/lib/rich-text';
 import { colors, icon, radius, shadow, space, touch } from '@/theme/tokens';
 import {
@@ -62,6 +65,27 @@ function Entry({ date, last, children }: { date: string; last: boolean; children
         </AppText>
         <View style={styles.card}>{children}</View>
       </View>
+    </View>
+  );
+}
+
+function Source({ doctor, branch, verb }: { doctor: string | null; branch?: string | null; verb: string }) {
+  return (
+    <View style={styles.source}>
+      <View style={styles.sourceItem}>
+        <Stethoscope size={icon.sm} color={colors.textMuted} />
+        <AppText variant="caption" tone="muted" numberOfLines={1} style={styles.flex}>
+          {verb} {doctor ?? 'a doctor'}
+        </AppText>
+      </View>
+      {branch ? (
+        <View style={styles.sourceItem}>
+          <Building2 size={icon.sm} color={colors.textMuted} />
+          <AppText variant="caption" tone="muted" numberOfLines={1} style={styles.flex}>
+            {branch} branch
+          </AppText>
+        </View>
+      ) : null}
     </View>
   );
 }
@@ -136,10 +160,12 @@ function Prescriptions({ file }: { file: PatientFile }) {
                 </AppText>
               </View>
               <AppText variant="label">{p.diagnosis}</AppText>
-              <AppText variant="caption" tone="muted">
-                {p.doctor ?? 'Doctor'}
-                {p.followupDate ? ` · Follow up ${formatDate(p.followupDate)}` : ''}
-              </AppText>
+              <Source verb="Prescribed by" doctor={p.doctor} branch={p.branch} />
+              {p.followupDate ? (
+                <AppText variant="caption" tone="muted">
+                  Follow up {formatDate(p.followupDate)}
+                </AppText>
+              ) : null}
             </Pressable>
             {expanded ? (
               <View style={styles.items}>
@@ -190,10 +216,9 @@ function Remarks({ file }: { file: PatientFile }) {
         <Entry key={r.consultationId} date={r.date} last={index === file.remarks.length - 1}>
           <View style={styles.between}>
             <AppText weight="semibold">Visit #{r.appointmentNo}</AppText>
-            <AppText variant="caption" tone="muted">
-              {r.doctor ?? 'Doctor'}
-            </AppText>
+            {r.editable ? <StatusBadge label="Yours" tone="primary" /> : null}
           </View>
+          <Source verb="Written by" doctor={r.doctor} branch={r.branch} />
           {r.remarks ? (
             <RichTextView html={r.remarks} />
           ) : (
@@ -247,22 +272,34 @@ function RecordFiles({ file }: { file: PatientFile }) {
         message="Reports and scans of this patient show here."
       />
     );
+  const groups = groupRecords(file.records);
   return (
     <>
-      {file.records.map((r, index) => (
-        <Entry key={r.id} date={r.date} last={index === file.records.length - 1}>
+      {groups.map((r, index) => (
+        <Entry key={r.key} date={r.date} last={index === groups.length - 1}>
           <View style={styles.between}>
             <StatusBadge
               label={r.type === 'imaging' ? 'Imaging' : 'Lab / medical report'}
               tone={r.type === 'imaging' ? 'info' : 'primary'}
             />
-            {r.uploadedByPatient ? (
-              <AppText variant="caption" tone="muted">
-                From the app
-              </AppText>
-            ) : null}
+            <AppText variant="caption" tone="muted">
+              {r.files.length} file{r.files.length === 1 ? '' : 's'} ·{' '}
+              {r.uploadedByPatient ? 'From the app' : 'By the clinic'}
+            </AppText>
           </View>
-          {r.note ? <AppText variant="label">{r.note}</AppText> : null}
+          {r.branch ? (
+            <View style={styles.branchRow}>
+              <Building2 size={icon.sm} color={colors.textMuted} />
+              <AppText variant="caption" tone="muted" numberOfLines={1} style={styles.flex}>
+                {r.branch} branch
+              </AppText>
+            </View>
+          ) : null}
+          {r.notes.map((note) => (
+            <AppText key={note} variant="label">
+              {note}
+            </AppText>
+          ))}
           {r.files.map((f) => {
             const Icon = f.contentType.startsWith('image/') ? FileImage : FileText;
             return (
@@ -546,6 +583,9 @@ const styles = StyleSheet.create({
   },
   filePressed: { opacity: 0.8 },
   records: { gap: space.lg },
+  branchRow: { flexDirection: 'row', alignItems: 'center', gap: space.xs },
+  source: { gap: space.xxs },
+  sourceItem: { flexDirection: 'row', alignItems: 'center', gap: space.xs },
   segment: {
     flexDirection: 'row',
     padding: space.xs,
