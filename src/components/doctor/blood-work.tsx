@@ -4,6 +4,7 @@ import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import Svg, { Circle, Line, Path, Rect, Text as SvgText } from 'react-native-svg';
 import { EmptyState } from '@/components/feedback/states';
 import { AppText } from '@/components/ui/app-text';
+import { smoothPath } from '@/lib/smooth-path';
 import { chart, colors, fontSize, icon, radius, shadow, space } from '@/theme/tokens';
 import type { BloodTest, BloodWork } from '@/redux/features/doctor';
 
@@ -128,9 +129,7 @@ function Chart({
             const pts = dates
               .map((date, i) => ({ i, point: s.points.find((p) => p.date === date) }))
               .filter((p): p is { i: number; point: Series['points'][number] } => Boolean(p.point));
-            const d = pts
-              .map((p, n) => `${n ? 'L' : 'M'}${x(p.i).toFixed(1)},${y(p.point.value).toFixed(1)}`)
-              .join(' ');
+            const d = smoothPath(pts.map((p) => ({ x: x(p.i), y: y(p.point.value) })));
             return (
               <Path
                 key={`l${s.test}`}
