@@ -4,6 +4,8 @@ import { fileUpload } from '../../api/formData';
 import { LIST } from '../../api/tagTypes';
 import type { ChatPage, ChatMessage, ChatRealtime, PushTokenInput } from '../chat/types';
 import type {
+  AppointmentsWhen,
+  DoctorAppointmentsPage,
   DoctorHome,
   DoctorPatient,
   DoctorProfile,
@@ -25,6 +27,23 @@ export const doctorApi = baseApi.injectEndpoints({
       query: (search) => ({ url: '/doctor/patients', params: search ? { search } : undefined }),
       transformResponse: unwrapData<DoctorPatient[]>,
       providesTags: [{ type: 'DoctorPatient', id: LIST }],
+    }),
+    getDoctorAppointments: build.query<DoctorAppointmentsPage, { when: AppointmentsWhen; page: number }>({
+      query: ({ when, page }) => ({ url: '/doctor/appointments', params: { when, page } }),
+      transformResponse: unwrapData<DoctorAppointmentsPage>,
+      serializeQueryArgs: ({ queryArgs }) => queryArgs.when,
+      merge: (cached, incoming) =>
+        incoming.page === 1
+          ? incoming
+          : {
+              ...incoming,
+              items: [
+                ...cached.items,
+                ...incoming.items.filter((a) => !cached.items.some((c) => c.id === a.id)),
+              ],
+            },
+      forceRefetch: ({ currentArg, previousArg }) => currentArg?.page !== previousArg?.page,
+      providesTags: [{ type: 'DoctorHome', id: LIST }],
     }),
     getDoctorProfile: build.query<DoctorProfile, void>({
       query: () => '/doctor/profile',
@@ -133,6 +152,7 @@ export const {
   useLazyGetDoctorRecordUrlQuery,
   useSaveDoctorRemarksMutation,
   useGetDoctorProfileQuery,
+  useGetDoctorAppointmentsQuery,
   useUpdateDoctorProfileMutation,
   useChangeDoctorPasswordMutation,
   useSaveDoctorPushTokenMutation,

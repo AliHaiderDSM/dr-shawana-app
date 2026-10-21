@@ -1,12 +1,5 @@
 import { router } from 'expo-router';
-import {
-  CalendarCheck,
-  CalendarClock,
-  ChevronRight,
-  MessageCircle,
-  Stethoscope,
-  Users,
-} from 'lucide-react-native';
+import { CalendarCheck, CalendarClock, CalendarDays, ChevronRight, Stethoscope } from 'lucide-react-native';
 import { Pressable, StyleSheet, View } from 'react-native';
 import { ChatRow, ScheduleRow } from '@/components/doctor/parts';
 import { CardSkeleton, EmptyState, ErrorState, SkeletonBlock } from '@/components/feedback/states';
@@ -43,7 +36,7 @@ function Action({
 }: {
   label: string;
   hint: string;
-  icon: typeof Users;
+  icon: typeof CalendarDays;
   badge?: number;
   onPress: () => void;
 }) {
@@ -120,17 +113,14 @@ export default function DoctorHomeScreen() {
 
       <View style={styles.actions}>
         <Action
-          label="My patients"
-          hint={h ? `${h.counts.patients} patients in every branch` : 'Everyone you have seen'}
-          icon={Users}
-          onPress={() => router.push('/doctor/patients')}
-        />
-        <Action
-          label="Messages"
-          hint={h?.counts.unread ? `${h.counts.unread} new from patients` : 'Chat with your patients'}
-          icon={MessageCircle}
-          badge={h?.counts.unread}
-          onPress={() => router.push('/doctor/messages')}
+          label="Appointments"
+          hint={
+            h?.counts.appointments !== undefined
+              ? `${h.counts.appointments} in every branch · upcoming and past`
+              : 'Upcoming and past, in every branch'
+          }
+          icon={CalendarDays}
+          onPress={() => router.push('/doctor/appointments')}
         />
       </View>
 
@@ -140,7 +130,11 @@ export default function DoctorHomeScreen() {
         <ErrorState error={home.error} onRetry={home.refetch} retrying={home.isFetching} />
       ) : (
         <>
-          <SectionHeader title="Schedule" />
+          <SectionHeader
+            title="Schedule"
+            actionLabel="All"
+            onAction={() => router.push('/doctor/appointments')}
+          />
           {h.schedule.length ? (
             <View style={styles.list}>
               {h.schedule.map((a) => (

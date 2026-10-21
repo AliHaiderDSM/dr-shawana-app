@@ -1,4 +1,4 @@
-import { router, useLocalSearchParams } from 'expo-router';
+import { router, Stack, useLocalSearchParams } from 'expo-router';
 import * as WebBrowser from 'expo-web-browser';
 import {
   Building2,
@@ -371,7 +371,8 @@ function Records({ file }: { file: PatientFile }) {
 }
 
 export default function DoctorPatientFileScreen() {
-  const { patientId = '' } = useLocalSearchParams<{ patientId: string }>();
+  const { patientId = '', from } = useLocalSearchParams<{ patientId: string; from?: string }>();
+  const fromChat = from === 'chat';
   const file = useGetDoctorPatientFileQuery(patientId, { skip: !patientId, refetchOnMountOrArgChange: true });
   const [openChat, openState] = useOpenDoctorChatMutation();
   const [tab, setTab] = useState<Tab>('appointments');
@@ -401,59 +402,62 @@ export default function DoctorPatientFileScreen() {
 
   return (
     <Screen refreshing={refreshing} onRefresh={onRefresh}>
-      <View style={styles.hero}>
-        <View style={styles.heroTop}>
-          <Initials text={initials(p.name)} size={56} />
-          <View style={styles.flex}>
-            <AppText variant="heading" numberOfLines={2} style={styles.heroText}>
-              {p.name}
-            </AppText>
-            <AppText variant="caption" style={styles.heroMuted}>
-              {[p.phone, p.age !== null ? `${p.age} years` : null, p.city].filter(Boolean).join(' · ')}
-            </AppText>
+      {fromChat ? <Stack.Screen options={{ title: p.name }} /> : null}
+      {fromChat ? null : (
+        <View style={styles.hero}>
+          <View style={styles.heroTop}>
+            <Initials text={initials(p.name)} size={56} />
+            <View style={styles.flex}>
+              <AppText variant="heading" numberOfLines={2} style={styles.heroText}>
+                {p.name}
+              </AppText>
+              <AppText variant="caption" style={styles.heroMuted}>
+                {[p.phone, p.age !== null ? `${p.age} years` : null, p.city].filter(Boolean).join(' · ')}
+              </AppText>
+            </View>
           </View>
+          {p.weightKg || p.heightCm ? (
+            <View style={styles.vitals}>
+              {p.weightKg ? (
+                <View style={styles.vital}>
+                  <Scale size={icon.sm} color={colors.textInverse} />
+                  <AppText variant="caption" weight="semibold" style={styles.heroText}>
+                    {Number(p.weightKg)} kg
+                  </AppText>
+                </View>
+              ) : null}
+              {p.heightCm ? (
+                <View style={styles.vital}>
+                  <Ruler size={icon.sm} color={colors.textInverse} />
+                  <AppText variant="caption" weight="semibold" style={styles.heroText}>
+                    {Number(p.heightCm)} cm
+                  </AppText>
+                </View>
+              ) : null}
+            </View>
+          ) : null}
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={`Message ${p.name}`}
+            disabled={openState.isLoading}
+            onPress={() =>
+              void openChatWith({ id: p.id, name: p.name, conversationId: f.conversationId }, (id) =>
+                openChat(id).unwrap(),
+              )
+            }
+            style={({ pressed }) => [styles.cta, pressed && styles.ctaPressed]}
+          >
+            {openState.isLoading ? (
+              <ActivityIndicator color={colors.primary} />
+            ) : (
+              <MessageCircle size={icon.md} color={colors.primary} />
+            )}
+            <AppText weight="semibold" tone="primary">
+              Message {p.name.split(' ')[0]}
+            </AppText>
+          </Pressable>
         </View>
-        {p.weightKg || p.heightCm ? (
-          <View style={styles.vitals}>
-            {p.weightKg ? (
-              <View style={styles.vital}>
-                <Scale size={icon.sm} color={colors.textInverse} />
-                <AppText variant="caption" weight="semibold" style={styles.heroText}>
-                  {Number(p.weightKg)} kg
-                </AppText>
-              </View>
-            ) : null}
-            {p.heightCm ? (
-              <View style={styles.vital}>
-                <Ruler size={icon.sm} color={colors.textInverse} />
-                <AppText variant="caption" weight="semibold" style={styles.heroText}>
-                  {Number(p.heightCm)} cm
-                </AppText>
-              </View>
-            ) : null}
-          </View>
-        ) : null}
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel={`Message ${p.name}`}
-          disabled={openState.isLoading}
-          onPress={() =>
-            void openChatWith({ id: p.id, name: p.name, conversationId: f.conversationId }, (id) =>
-              openChat(id).unwrap(),
-            )
-          }
-          style={({ pressed }) => [styles.cta, pressed && styles.ctaPressed]}
-        >
-          {openState.isLoading ? (
-            <ActivityIndicator color={colors.primary} />
-          ) : (
-            <MessageCircle size={icon.md} color={colors.primary} />
-          )}
-          <AppText weight="semibold" tone="primary">
-            Message {p.name.split(' ')[0]}
-          </AppText>
-        </Pressable>
-      </View>
+      )}
 
       <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.tabs}>
         {TABS.map((t) => {

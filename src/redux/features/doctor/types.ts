@@ -2,7 +2,14 @@ import type { UploadableFile } from '@/types/api';
 
 export interface DoctorHome {
   doctor: { id: string; name: string; details: string | null; branch: string };
-  counts: { patients: number; today: number; completedToday: number; upcoming: number; unread: number };
+  counts: {
+    patients: number;
+    appointments?: number;
+    today: number;
+    completedToday: number;
+    upcoming: number;
+    unread: number;
+  };
   schedule: {
     id: string;
     appointmentNo: number;
@@ -22,6 +29,28 @@ export interface DoctorHome {
     lastMessageAt: string | null;
     unread: number;
   }[];
+}
+
+export type AppointmentsWhen = 'upcoming' | 'past';
+
+export interface DoctorAppointment {
+  id: string;
+  appointmentNo: number;
+  date: string;
+  timeFrom: string;
+  timeTo: string;
+  status: string;
+  visitType: string;
+  mode: string;
+  issues: string | null;
+  branch: string;
+  patient: { id: string; name: string; phone: string };
+}
+
+export interface DoctorAppointmentsPage {
+  items: DoctorAppointment[];
+  page: number;
+  hasMore: boolean;
 }
 
 export interface DoctorPatient {

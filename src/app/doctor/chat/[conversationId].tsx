@@ -53,7 +53,8 @@ export default function DoctorChatScreen() {
       subtitle={patient?.phone ? `${patient.phone} · Tap for patient file` : 'Tap for patient file'}
       headerLabel={`${title}, open the patient file`}
       onHeaderPress={() => {
-        if (id) router.push({ pathname: '/doctor/patient/[patientId]', params: { patientId: id } });
+        if (id)
+          router.push({ pathname: '/doctor/patient/[patientId]', params: { patientId: id, from: 'chat' } });
       }}
       latest={latest}
       loadOlder={(before) => loadOlder({ conversationId, before }).unwrap()}
