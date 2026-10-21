@@ -20,22 +20,33 @@ export function VoiceNote({
   const status = useAudioPlayerStatus(player);
   const [loaded, setLoaded] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [measured, setMeasured] = useState(0);
+  const [heard, setHeard] = useState(0);
+  const [learned, setLearned] = useState(0);
   const [finished, setFinished] = useState(false);
   const fg = mine ? colors.textInverse : colors.primary;
   const track = mine ? colors.onPrimarySoft : colors.surfaceMuted;
   const fill = mine ? colors.textInverse : colors.primary;
-  const reported = Number.isFinite(status.duration) && status.duration > 0 ? status.duration : 0;
-  if (reported > measured) setMeasured(reported);
+  if (status.currentTime > heard) setHeard(status.currentTime);
   const [endSignal, setEndSignal] = useState(false);
   if (status.didJustFinish !== endSignal) {
     setEndSignal(status.didJustFinish);
-    if (status.didJustFinish) setFinished(true);
+    if (status.didJustFinish) {
+      setFinished(true);
+      setLearned(Math.max(heard, status.currentTime));
+    }
   }
   const known = durationMs ? durationMs / 1000 : 0;
-  const length = Math.max(known, measured);
+  const reported = Number.isFinite(status.duration) && status.duration > 1 ? status.duration : 0;
+  const trusted = reported > 0 && heard <= reported + 0.3 ? reported : 0;
+  const length = known || learned || trusted;
   const atEnd = finished && !status.playing;
-  const progress = atEnd ? 1 : length > 0 ? Math.min(1, status.currentTime / length) : 0;
+  const progress = atEnd
+    ? 1
+    : length > 0
+      ? Math.min(1, status.currentTime / length)
+      : status.currentTime > 0
+        ? status.currentTime / (status.currentTime + 3)
+        : 0;
   const moving = status.playing || (progress > 0 && progress < 1);
   const busy = loading || (loaded && status.isBuffering && !status.playing);
 
@@ -84,7 +95,11 @@ export function VoiceNote({
           <View style={[styles.fill, { backgroundColor: fill, width: `${Math.round(progress * 100)}%` }]} />
         </View>
         <AppText variant="caption" style={{ color: mine ? colors.textInverseMuted : colors.textMuted }}>
-          {length > 0 ? formatDuration(moving && !atEnd ? status.currentTime : length) : 'Voice message'}
+          {length > 0
+            ? formatDuration(moving && !atEnd ? status.currentTime : length)
+            : status.currentTime > 0
+              ? formatDuration(status.currentTime)
+              : 'Voice message'}
         </AppText>
       </View>
     </View>

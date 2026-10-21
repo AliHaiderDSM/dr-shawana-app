@@ -1,6 +1,7 @@
+import { Eye, EyeOff } from 'lucide-react-native';
 import { forwardRef, useRef, useState } from 'react';
-import { StyleSheet, TextInput, View, type TextInputProps } from 'react-native';
-import { colors, fontSize, maxFontScale, radius, space, touch } from '@/theme/tokens';
+import { Pressable, StyleSheet, TextInput, View, type TextInputProps } from 'react-native';
+import { colors, fontSize, icon, maxFontScale, radius, space, touch } from '@/theme/tokens';
 import { AppText } from './app-text';
 import { useRevealOnFocus } from './keyboard-reveal';
 
@@ -13,10 +14,12 @@ export interface TextFieldProps extends Omit<TextInputProps, 'style'> {
 }
 
 export const TextField = forwardRef<TextInput, TextFieldProps>(function TextField(
-  { label, error, hint, multiline, counter, value, editable = true, ...props },
+  { label, error, hint, multiline, counter, value, editable = true, secureTextEntry, ...props },
   ref,
 ) {
   const [focused, setFocused] = useState(false);
+  const [hidden, setHidden] = useState(true);
+  const secret = Boolean(secureTextEntry);
   const fieldRef = useRef<View>(null);
   const reveal = useRevealOnFocus();
   return (
@@ -38,6 +41,7 @@ export const TextField = forwardRef<TextInput, TextFieldProps>(function TextFiel
           {...props}
           value={value}
           editable={editable}
+          secureTextEntry={secret && hidden}
           multiline={multiline}
           accessibilityLabel={label}
           accessibilityLabelledBy={`${label}-label`}
@@ -56,6 +60,21 @@ export const TextField = forwardRef<TextInput, TextFieldProps>(function TextFiel
           }}
           style={[styles.input, multiline && styles.inputMultiline]}
         />
+        {secret ? (
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={hidden ? `Show ${label.toLowerCase()}` : `Hide ${label.toLowerCase()}`}
+            onPress={() => setHidden((h) => !h)}
+            hitSlop={6}
+            style={styles.eye}
+          >
+            {hidden ? (
+              <Eye size={icon.md} color={colors.textMuted} />
+            ) : (
+              <EyeOff size={icon.md} color={colors.textMuted} />
+            )}
+          </Pressable>
+        ) : null}
       </View>
       <View style={styles.meta}>
         {error ? (
@@ -103,6 +122,12 @@ const styles = StyleSheet.create({
     minHeight: touch.minHeight,
   },
   inputMultiline: { minHeight: 140, paddingTop: space.md },
+  eye: {
+    width: touch.iconButton,
+    alignSelf: 'stretch',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   meta: { flexDirection: 'row', alignItems: 'flex-start', gap: space.sm },
   metaText: { flex: 1 },
 });
