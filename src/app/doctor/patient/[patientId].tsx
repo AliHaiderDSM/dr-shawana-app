@@ -3,6 +3,8 @@ import * as WebBrowser from 'expo-web-browser';
 import {
   Building2,
   CalendarDays,
+  ChevronDown,
+  ChevronUp,
   ClipboardList,
   FileImage,
   FileText,
@@ -19,7 +21,7 @@ import { useState, type ReactNode } from 'react';
 import { ActivityIndicator, Alert, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { BloodWorkView } from '@/components/doctor/blood-work';
 import { openChatWith } from '@/components/doctor/open-chat';
-import { Initials, STATUS_TONE } from '@/components/doctor/parts';
+import { Initials } from '@/components/doctor/parts';
 import { CardSkeleton, EmptyState, ErrorState } from '@/components/feedback/states';
 import { AppText } from '@/components/ui/app-text';
 import { Button } from '@/components/ui/button';
@@ -28,7 +30,7 @@ import { Screen } from '@/components/ui/screen';
 import { StatusBadge } from '@/components/ui/status-badge';
 import { useRefresh } from '@/hooks/use-refresh';
 import { errorMessage } from '@/lib/errors';
-import { formatDate, formatDay, formatTime, initials } from '@/lib/format';
+import { formatDate, formatDay, initials } from '@/lib/format';
 import { groupRecords } from '@/lib/record-groups';
 import { htmlToMarkup } from '@/lib/rich-text';
 import { colors, icon, radius, shadow, space, touch } from '@/theme/tokens';
@@ -40,17 +42,52 @@ import {
   useOpenDoctorChatMutation,
 } from '@/redux/features/doctor';
 
-type Tab = 'appointments' | 'prescriptions' | 'remarks' | 'records';
+type Tab = 'visits' | 'records';
 
 const TABS: { key: Tab; label: string; icon: typeof Pill }[] = [
-  { key: 'appointments', label: 'Appointments', icon: CalendarDays },
-  { key: 'prescriptions', label: 'Prescriptions', icon: Pill },
-  { key: 'remarks', label: 'Clinical remarks', icon: ClipboardList },
+  { key: 'visits', label: 'Visits', icon: CalendarDays },
   { key: 'records', label: 'Medical records', icon: FolderHeart },
 ];
 
-const VISIT: Record<string, string> = { new: 'New visit', followup: 'Follow up' };
-const MODE: Record<string, string> = { physical: 'In clinic', online: 'Online' };
+const openRemarks = (consultationId: string, patientId: string) =>
+  router.push({ pathname: '/doctor/remarks/[consultationId]', params: { consultationId, patientId } });
+
+function Segment<T extends string>({
+  value,
+  onChange,
+  options,
+}: {
+  value: T;
+  onChange: (value: T) => void;
+  options: { key: T; label: string; icon: typeof Pill; count: number }[];
+}) {
+  return (
+    <View style={styles.segment} accessibilityRole="tablist">
+      {options.map((o) => {
+        const on = value === o.key;
+        const Icon = o.icon;
+        return (
+          <Pressable
+            key={o.key}
+            accessibilityRole="tab"
+            accessibilityState={{ selected: on }}
+            accessibilityLabel={`${o.label}, ${o.count}`}
+            onPress={() => onChange(o.key)}
+            style={[styles.segmentItem, on && styles.segmentOn]}
+          >
+            <Icon size={icon.sm} color={on ? colors.primary : colors.textMuted} />
+            <AppText variant="label" weight="semibold" tone={on ? 'primary' : 'muted'}>
+              {o.label}
+            </AppText>
+            <AppText variant="caption" weight="bold" tone={on ? 'primary' : 'muted'}>
+              {o.count}
+            </AppText>
+          </Pressable>
+        );
+      })}
+    </View>
+  );
+}
 
 function Entry({ date, last, children }: { date: string; last: boolean; children: ReactNode }) {
   return (
@@ -90,48 +127,8 @@ function Source({ doctor, branch, verb }: { doctor: string | null; branch?: stri
   );
 }
 
-function Appointments({ file }: { file: PatientFile }) {
-  if (!file.appointments.length)
-    return (
-      <EmptyState
-        icon={CalendarDays}
-        title="No appointments"
-        message="Visits of this patient will show here."
-      />
-    );
-  return (
-    <>
-      {file.appointments.map((a, index) => {
-        const s = STATUS_TONE[a.status] ?? { label: a.status, tone: 'neutral' as const };
-        return (
-          <Entry key={a.id} date={a.date} last={index === file.appointments.length - 1}>
-            <View style={styles.between}>
-              <AppText weight="semibold">
-                #{a.appointmentNo} · {formatTime(a.timeFrom)}
-              </AppText>
-              <StatusBadge label={s.label} tone={s.tone} />
-            </View>
-            <AppText variant="caption" tone="muted">
-              {VISIT[a.visitType] ?? a.visitType} · {MODE[a.mode] ?? a.mode} · {a.branch}
-            </AppText>
-            <AppText variant="caption" tone={a.mine ? 'primary' : 'muted'} weight="semibold">
-              {a.mine ? 'With you' : (a.doctor ?? 'Doctor')}
-            </AppText>
-            {a.issues ? <AppText variant="label">{a.issues}</AppText> : null}
-            {a.remark ? (
-              <AppText variant="caption" tone="muted">
-                Remark: {a.remark}
-              </AppText>
-            ) : null}
-          </Entry>
-        );
-      })}
-    </>
-  );
-}
-
 function Prescriptions({ file }: { file: PatientFile }) {
-  const [open, setOpen] = useState<string | null>(file.prescriptions[0]?.id ?? null);
+  const [open, setOpen] = useState<string | null>(null);
   if (!file.prescriptions.length)
     return (
       <EmptyState
@@ -144,6 +141,9 @@ function Prescriptions({ file }: { file: PatientFile }) {
     <>
       {file.prescriptions.map((p, index) => {
         const expanded = open === p.id;
+        const remark = p.consultationId
+          ? file.remarks.find((r) => r.consultationId === p.consultationId)
+          : undefined;
         return (
           <Entry key={p.id} date={p.date} last={index === file.prescriptions.length - 1}>
             <Pressable
@@ -155,9 +155,16 @@ function Prescriptions({ file }: { file: PatientFile }) {
             >
               <View style={styles.between}>
                 <AppText weight="semibold">Prescription #{p.prescriptionNo}</AppText>
-                <AppText variant="caption" tone="primary" weight="semibold">
-                  {expanded ? 'Hide' : `${p.items.length} items`}
-                </AppText>
+                <View style={styles.toggle}>
+                  <AppText variant="caption" tone="primary" weight="semibold">
+                    {expanded ? 'Hide' : `${p.items.length} items`}
+                  </AppText>
+                  {expanded ? (
+                    <ChevronUp size={icon.sm} color={colors.primary} />
+                  ) : (
+                    <ChevronDown size={icon.sm} color={colors.primary} />
+                  )}
+                </View>
               </View>
               <AppText variant="label">{p.diagnosis}</AppText>
               <Source verb="Prescribed by" doctor={p.doctor} branch={p.branch} />
@@ -165,6 +172,14 @@ function Prescriptions({ file }: { file: PatientFile }) {
                 <AppText variant="caption" tone="muted">
                   Follow up {formatDate(p.followupDate)}
                 </AppText>
+              ) : null}
+              {!expanded && remark?.remarks ? (
+                <View style={styles.remarkTag}>
+                  <ClipboardList size={12} color={colors.primary} />
+                  <AppText variant="caption" tone="primary" weight="semibold">
+                    Clinical remarks added
+                  </AppText>
+                </View>
               ) : null}
             </Pressable>
             {expanded ? (
@@ -190,6 +205,41 @@ function Prescriptions({ file }: { file: PatientFile }) {
                       PLAN OF TREATMENT
                     </AppText>
                     <RichTextView html={p.planTreatment} />
+                  </View>
+                ) : null}
+                {remark ? (
+                  <View style={styles.remarkBox}>
+                    <View style={styles.between}>
+                      <AppText variant="caption" weight="semibold" tone="muted">
+                        CLINICAL REMARKS
+                      </AppText>
+                      {remark.editable && remark.remarks ? (
+                        <Pressable
+                          accessibilityRole="button"
+                          accessibilityLabel="Edit clinical remarks"
+                          hitSlop={8}
+                          onPress={() => openRemarks(remark.consultationId, file.patient.id)}
+                          style={styles.pencil}
+                        >
+                          <Pencil size={icon.sm} color={colors.primary} />
+                        </Pressable>
+                      ) : null}
+                    </View>
+                    {remark.remarks ? (
+                      <RichTextView html={remark.remarks} />
+                    ) : (
+                      <AppText variant="label" tone="muted">
+                        No clinical remarks for this visit yet.
+                      </AppText>
+                    )}
+                    {remark.editable && !remark.remarks ? (
+                      <Button
+                        label="Write clinical remarks"
+                        icon={Pencil}
+                        variant="secondary"
+                        onPress={() => openRemarks(remark.consultationId, file.patient.id)}
+                      />
+                    ) : null}
                   </View>
                 ) : null}
               </View>
@@ -231,12 +281,7 @@ function Remarks({ file }: { file: PatientFile }) {
               label={r.remarks ? 'Edit remarks' : 'Write remarks'}
               icon={Pencil}
               variant="secondary"
-              onPress={() =>
-                router.push({
-                  pathname: '/doctor/remarks/[consultationId]',
-                  params: { consultationId: r.consultationId, patientId: file.patient.id },
-                })
-              }
+              onPress={() => openRemarks(r.consultationId, file.patient.id)}
             />
           ) : null}
         </Entry>
@@ -327,45 +372,52 @@ function RecordFiles({ file }: { file: PatientFile }) {
   );
 }
 
-type RecordsView = 'files' | 'blood';
+type VisitsView = 'prescriptions' | 'remarks';
+
+function Visits({ file }: { file: PatientFile }) {
+  const [view, setView] = useState<VisitsView>('prescriptions');
+  return (
+    <View style={styles.records}>
+      <Segment
+        value={view}
+        onChange={setView}
+        options={[
+          { key: 'prescriptions', label: 'Prescriptions', icon: Pill, count: file.prescriptions.length },
+          { key: 'remarks', label: 'Clinical remarks', icon: ClipboardList, count: file.remarks.length },
+        ]}
+      />
+      {view === 'prescriptions' ? <Prescriptions file={file} /> : <Remarks file={file} />}
+    </View>
+  );
+}
 
 const NO_BLOOD_WORK: BloodWork = { dates: [], tests: [] };
 
 function Records({ file }: { file: PatientFile }) {
-  const [view, setView] = useState<RecordsView>('files');
   const blood = file.bloodWork ?? NO_BLOOD_WORK;
   const fileCount = file.records.reduce((sum, r) => sum + r.files.length, 0);
-  const options: { key: RecordsView; label: string; icon: typeof FileText; count: number }[] = [
-    { key: 'files', label: 'Files', icon: FileText, count: fileCount },
-    { key: 'blood', label: 'Blood work', icon: FlaskConical, count: blood.dates.length },
-  ];
   return (
     <View style={styles.records}>
-      <View style={styles.segment} accessibilityRole="tablist">
-        {options.map((o) => {
-          const on = view === o.key;
-          const Icon = o.icon;
-          return (
-            <Pressable
-              key={o.key}
-              accessibilityRole="tab"
-              accessibilityState={{ selected: on }}
-              accessibilityLabel={`${o.label}, ${o.count}`}
-              onPress={() => setView(o.key)}
-              style={[styles.segmentItem, on && styles.segmentOn]}
-            >
-              <Icon size={icon.sm} color={on ? colors.primary : colors.textMuted} />
-              <AppText variant="label" weight="semibold" tone={on ? 'primary' : 'muted'}>
-                {o.label}
-              </AppText>
-              <AppText variant="caption" weight="bold" tone={on ? 'primary' : 'muted'}>
-                {o.count}
-              </AppText>
-            </Pressable>
-          );
-        })}
+      <View style={styles.sectionHead}>
+        <FlaskConical size={icon.md} color={colors.primary} />
+        <AppText weight="semibold" style={styles.flex}>
+          Blood work
+        </AppText>
+        <AppText variant="caption" tone="muted">
+          {blood.dates.length} test date{blood.dates.length === 1 ? '' : 's'}
+        </AppText>
       </View>
-      {view === 'files' ? <RecordFiles file={file} /> : <BloodWorkView data={blood} />}
+      <BloodWorkView data={blood} />
+      <View style={styles.sectionHead}>
+        <FileText size={icon.md} color={colors.primary} />
+        <AppText weight="semibold" style={styles.flex}>
+          Files
+        </AppText>
+        <AppText variant="caption" tone="muted">
+          {fileCount} file{fileCount === 1 ? '' : 's'}
+        </AppText>
+      </View>
+      <RecordFiles file={file} />
     </View>
   );
 }
@@ -375,7 +427,7 @@ export default function DoctorPatientFileScreen() {
   const fromChat = from === 'chat';
   const file = useGetDoctorPatientFileQuery(patientId, { skip: !patientId, refetchOnMountOrArgChange: true });
   const [openChat, openState] = useOpenDoctorChatMutation();
-  const [tab, setTab] = useState<Tab>('appointments');
+  const [tab, setTab] = useState<Tab>('visits');
   const { refreshing, onRefresh } = useRefresh(file.refetch);
   const f = file.data;
 
@@ -394,10 +446,8 @@ export default function DoctorPatientFileScreen() {
 
   const p = f.patient;
   const counts: Record<Tab, number> = {
-    appointments: f.appointments.length,
-    prescriptions: f.prescriptions.length,
-    remarks: f.remarks.length,
-    records: f.records.length,
+    visits: f.prescriptions.length,
+    records: f.records.reduce((sum, r) => sum + r.files.length, 0),
   };
 
   return (
@@ -486,9 +536,7 @@ export default function DoctorPatientFileScreen() {
       </ScrollView>
 
       <View>
-        {tab === 'appointments' ? <Appointments file={f} /> : null}
-        {tab === 'prescriptions' ? <Prescriptions file={f} /> : null}
-        {tab === 'remarks' ? <Remarks file={f} /> : null}
+        {tab === 'visits' ? <Visits file={f} /> : null}
         {tab === 'records' ? <Records file={f} /> : null}
       </View>
     </Screen>
@@ -587,6 +635,18 @@ const styles = StyleSheet.create({
   },
   filePressed: { opacity: 0.8 },
   records: { gap: space.lg },
+  toggle: { flexDirection: 'row', alignItems: 'center', gap: space.xxs },
+  remarkTag: { flexDirection: 'row', alignItems: 'center', gap: space.xs },
+  remarkBox: {
+    gap: space.xs,
+    padding: space.sm,
+    borderRadius: radius.md,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: colors.border,
+    backgroundColor: colors.surface,
+  },
+  pencil: { padding: space.xs, borderRadius: radius.pill, backgroundColor: colors.primarySoft },
+  sectionHead: { flexDirection: 'row', alignItems: 'center', gap: space.sm },
   branchRow: { flexDirection: 'row', alignItems: 'center', gap: space.xs },
   source: { gap: space.xxs },
   sourceItem: { flexDirection: 'row', alignItems: 'center', gap: space.xs },
