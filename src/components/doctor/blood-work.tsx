@@ -1,10 +1,8 @@
 import { ChevronsLeft, FlaskConical, TrendingDown, TrendingUp } from 'lucide-react-native';
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
-import Svg, { Circle, Line, Path, Rect, Text as SvgText } from 'react-native-svg';
 import { EmptyState } from '@/components/feedback/states';
 import { AppText } from '@/components/ui/app-text';
-import { smoothPath } from '@/lib/smooth-path';
 import { chart, colors, fontSize, icon, radius, shadow, space } from '@/theme/tokens';
 import type { BloodTest, BloodWork } from '@/redux/features/doctor';
 
@@ -24,8 +22,12 @@ const LABELS = Object.fromEntries(TESTS.map((t) => [t.test, t.label])) as Record
 
 const ALL = 'all';
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-const CHART_HEIGHT = 220;
-const PAD = { top: 16, right: 16, bottom: 28, left: 44 };
+const CHART_HEIGHT = 240;
+const DATE_HEIGHT = 28;
+const VALUE_HEIGHT = 18;
+const AXIS_WIDTH = 40;
+const BAR_GAP = 2;
+const GROUP_GAP = space.lg;
 const NAME_WIDTH = 132;
 const MIN_CELL = 84;
 
@@ -43,23 +45,24 @@ const styleOf = (test: BloodTest) => {
     0,
     TESTS.findIndex((t) => t.test === test),
   );
-  return { color: chart[index % chart.length] ?? colors.primary, dashed: index >= chart.length };
+  return { color: chart[index % chart.length] ?? colors.primary, outlined: index >= chart.length };
+};
+
+const barFill = (test: BloodTest) => {
+  const st = styleOf(test);
+  return st.outlined
+    ? { backgroundColor: colors.surface, borderWidth: 2, borderColor: st.color }
+    : { backgroundColor: st.color };
+};
+
+const stepFor = (high: number) => {
+  const raw = high / 4 || 1;
+  const power = 10 ** Math.floor(Math.log10(raw));
+  return [1, 2, 2.5, 5, 10].map((m) => m * power).find((step) => step >= raw) ?? 10 * power;
 };
 
 function Swatch({ test }: { test: BloodTest }) {
-  const s = styleOf(test);
-  return (
-    <View style={styles.swatch}>
-      {s.dashed ? (
-        <>
-          <View style={[styles.swatchDash, { backgroundColor: s.color }]} />
-          <View style={[styles.swatchDash, { backgroundColor: s.color }]} />
-        </>
-      ) : (
-        <View style={[styles.swatchLine, { backgroundColor: s.color }]} />
-      )}
-    </View>
-  );
+  return <View style={[styles.swatch, barFill(test)]} />;
 }
 
 function Chart({
@@ -74,126 +77,87 @@ function Chart({
   onPick: (index: number) => void;
 }) {
   const [width, setWidth] = useState(0);
-  const values = series.flatMap((s) => s.points.map((p) => p.value));
-  const low = Math.min(...values);
-  const high = Math.max(...values);
-  const span = high - low || Math.max(Math.abs(high), 1);
-  const min = Math.max(0, low - span * 0.1);
-  const max = high + span * 0.1;
-  const plotW = Math.max(0, width - PAD.left - PAD.right);
-  const plotH = CHART_HEIGHT - PAD.top - PAD.bottom;
-  const x = (i: number) => PAD.left + (dates.length === 1 ? plotW / 2 : (plotW * i) / (dates.length - 1));
-  const y = (v: number) => PAD.top + plotH - ((v - min) / (max - min || 1)) * plotH;
-  const ticks = [min, min + (max - min) / 3, min + ((max - min) * 2) / 3, max];
-  const labelEvery = Math.max(1, Math.ceil(dates.length / 4));
-  const slot = dates.length > 1 ? plotW / (dates.length - 1) : plotW;
+  const scroller = useRef<ScrollView>(null);
+  const high = Math.max(0, ...series.flatMap((s) => s.points.map((p) => p.value)));
+  const step = stepFor(high);
+  const top = Math.max(step, Math.ceil(high / step) * step);
+  const ticks = Array.from({ length: Math.round(top / step) + 1 }, (_, i) => i * step);
+  const plotH = CHART_HEIGHT - DATE_HEIGHT - VALUE_HEIGHT;
+  const barW = series.length === 1 ? 28 : series.length <= 3 ? 14 : 8;
+  const groupW = series.length * barW + (series.length - 1) * BAR_GAP;
+  const slotW = Math.max(groupW + GROUP_GAP, (width - AXIS_WIDTH) / Math.max(dates.length, 1));
+  const y = (v: number) => VALUE_HEIGHT + plotH - (v / top) * plotH;
+  const labelled = series.length === 1;
 
   return (
-    <View onLayout={(e) => setWidth(e.nativeEvent.layout.width)}>
+    <View style={styles.chartRow} onLayout={(e) => setWidth(e.nativeEvent.layout.width)}>
+      <View style={styles.axis}>
+        {ticks.map((t) => (
+          <AppText key={t} variant="caption" tone="muted" style={[styles.tick, { top: y(t) - 8 }]}>
+            {num(t)}
+          </AppText>
+        ))}
+      </View>
       {width > 0 ? (
-        <Svg width={width} height={CHART_HEIGHT}>
-          {ticks.map((t, i) => (
-            <Line
-              key={`g${i}`}
-              x1={PAD.left}
-              x2={width - PAD.right}
-              y1={y(t)}
-              y2={y(t)}
-              stroke={colors.border}
-              strokeWidth={1}
-              strokeDasharray="3 4"
-            />
-          ))}
-          {ticks.map((t, i) => (
-            <SvgText
-              key={`t${i}`}
-              x={PAD.left - 8}
-              y={y(t) + 4}
-              fontSize={fontSize.xs - 1}
-              fill={colors.textMuted}
-              textAnchor="end"
-            >
-              {num(t)}
-            </SvgText>
-          ))}
-          <Line
-            x1={x(picked)}
-            x2={x(picked)}
-            y1={PAD.top}
-            y2={PAD.top + plotH}
-            stroke={colors.textMuted}
-            strokeWidth={1}
-          />
-          {series.map((s) => {
-            const st = styleOf(s.test);
-            const pts = dates
-              .map((date, i) => ({ i, point: s.points.find((p) => p.date === date) }))
-              .filter((p): p is { i: number; point: Series['points'][number] } => Boolean(p.point));
-            const d = smoothPath(pts.map((p) => ({ x: x(p.i), y: y(p.point.value) })));
-            return (
-              <Path
-                key={`l${s.test}`}
-                d={d}
-                stroke={st.color}
-                strokeWidth={2}
-                strokeDasharray={st.dashed ? '6 4' : undefined}
-                fill="none"
-                strokeLinejoin="round"
-              />
-            );
-          })}
-          {series.map((s) =>
-            s.points.map((p) => {
-              const i = dates.indexOf(p.date);
-              if (i < 0) return null;
-              return (
-                <Circle
-                  key={`d${s.test}${p.date}`}
-                  cx={x(i)}
-                  cy={y(p.value)}
-                  r={i === picked ? 5 : 4}
-                  fill={styleOf(s.test).color}
-                  stroke={colors.surface}
-                  strokeWidth={2}
-                />
-              );
-            }),
-          )}
-          {dates.map((date, i) =>
-            i % labelEvery === 0 || i === dates.length - 1 || i === picked ? (
-              <SvgText
-                key={`x${date}`}
-                x={x(i)}
-                y={CHART_HEIGHT - 8}
-                fontSize={fontSize.xs - 1}
-                fill={i === picked ? colors.text : colors.textMuted}
-                fontWeight={i === picked ? '600' : '400'}
-                textAnchor={
-                  dates.length === 1
-                    ? 'middle'
-                    : i === 0
-                      ? 'start'
-                      : i === dates.length - 1
-                        ? 'end'
-                        : 'middle'
-                }
-              >
-                {shortDate(date)}
-              </SvgText>
-            ) : null,
-          )}
-          {dates.map((date, i) => (
-            <Rect
-              key={`h${date}`}
-              x={x(i) - slot / 2}
-              y={0}
-              width={Math.max(slot, 44)}
-              height={CHART_HEIGHT}
-              fill="transparent"
-              onPress={() => onPick(i)}
-            />
-          ))}
-        </Svg>
+        <ScrollView
+          ref={scroller}
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          onContentSizeChange={() => scroller.current?.scrollToEnd({ animated: false })}
+          style={styles.flex}
+        >
+          <View style={{ width: slotW * dates.length, height: CHART_HEIGHT }}>
+            {ticks.map((t) => (
+              <View key={t} style={[styles.grid, t === 0 && styles.baseline, { top: y(t) }]} />
+            ))}
+            <View style={styles.groups}>
+              {dates.map((date, i) => {
+                const on = i === picked;
+                return (
+                  <Pressable
+                    key={date}
+                    accessibilityRole="button"
+                    accessibilityLabel={`Show the values of ${shortDate(date)}`}
+                    accessibilityState={{ selected: on }}
+                    onPress={() => onPick(i)}
+                    style={[styles.group, { width: slotW }, on && styles.groupOn]}
+                  >
+                    <View style={[styles.bars, { height: VALUE_HEIGHT + plotH }]}>
+                      {series.map((s) => {
+                        const point = s.points.find((p) => p.date === date);
+                        const h = point ? Math.max(2, (point.value / top) * plotH) : 0;
+                        return (
+                          <View key={s.test} style={[styles.barSlot, { width: barW }]}>
+                            {point && labelled ? (
+                              <AppText
+                                variant="caption"
+                                weight="semibold"
+                                numberOfLines={1}
+                                style={styles.barValue}
+                              >
+                                {num(point.value)}
+                              </AppText>
+                            ) : null}
+                            {point ? <View style={[styles.bar, barFill(s.test), { height: h }]} /> : null}
+                          </View>
+                        );
+                      })}
+                    </View>
+                    <AppText
+                      variant="caption"
+                      tone={on ? undefined : 'muted'}
+                      weight={on ? 'semibold' : undefined}
+                      numberOfLines={1}
+                      style={styles.dateLabel}
+                    >
+                      {shortDate(date)}
+                    </AppText>
+                  </Pressable>
+                );
+              })}
+            </View>
+          </View>
+        </ScrollView>
       ) : (
         <View style={styles.chartSpace} />
       )}
@@ -424,19 +388,10 @@ export function BloodWorkView({ data }: { data: BloodWork }) {
           ) : null}
         </View>
         {one ? <Headline series={one} /> : null}
-        {dates.length > 1 ? (
-          <>
-            <Chart key={String(choice)} dates={dates} series={shown} picked={at} onPick={setPicked} />
-            <AppText variant="caption" tone="muted">
-              Tap a date on the chart to see its values.
-            </AppText>
-          </>
-        ) : (
-          <AppText variant="caption" tone="muted" style={styles.note}>
-            Only one test date so far ({shortDate(dates[0] ?? data.dates[0] ?? '')}). The trend lines appear
-            once a second date is added.
-          </AppText>
-        )}
+        <Chart key={String(choice)} dates={dates} series={shown} picked={at} onPick={setPicked} />
+        <AppText variant="caption" tone="muted">
+          {dates.length > 1 ? 'Tap a date on the chart to see its values.' : 'Only one test date so far.'}
+        </AppText>
         {dates[at] ? <ValuesOn date={dates[at]} series={shown} /> : null}
       </View>
 
@@ -464,9 +419,7 @@ const styles = StyleSheet.create({
   chipOn: { borderColor: colors.primary, backgroundColor: colors.primarySoft },
   chipText: { color: colors.text },
   chipTextOn: { color: colors.primarySoftText },
-  swatch: { width: 16, height: 10, flexDirection: 'row', alignItems: 'center', gap: 3 },
-  swatchLine: { flex: 1, height: 3, borderRadius: radius.pill },
-  swatchDash: { width: 6, height: 3, borderRadius: radius.pill },
+  swatch: { width: 10, height: 10, borderRadius: 3 },
   card: {
     gap: space.sm,
     padding: space.md,
@@ -476,7 +429,26 @@ const styles = StyleSheet.create({
     borderColor: colors.border,
     ...shadow,
   },
-  chartSpace: { height: CHART_HEIGHT },
+  chartSpace: { flex: 1, height: CHART_HEIGHT },
+  chartRow: { flexDirection: 'row' },
+  axis: { width: AXIS_WIDTH, height: CHART_HEIGHT },
+  tick: { position: 'absolute', right: space.sm, fontSize: fontSize.xs - 1 },
+  grid: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    height: StyleSheet.hairlineWidth,
+    backgroundColor: colors.border,
+  },
+  baseline: { height: 1, backgroundColor: colors.textMuted },
+  groups: { position: 'absolute', top: 0, right: 0, bottom: 0, left: 0, flexDirection: 'row' },
+  group: { alignItems: 'center', borderRadius: radius.sm },
+  groupOn: { backgroundColor: colors.primarySoft },
+  bars: { flexDirection: 'row', alignItems: 'flex-end', gap: BAR_GAP },
+  barSlot: { alignItems: 'center', justifyContent: 'flex-end', height: '100%' },
+  barValue: { fontSize: fontSize.xs - 1, marginBottom: space.xxs, width: 48, textAlign: 'center' },
+  bar: { width: '100%', borderTopLeftRadius: 4, borderTopRightRadius: 4 },
+  dateLabel: { height: DATE_HEIGHT, paddingTop: space.xs, fontSize: fontSize.xs - 1 },
   headline: { flexDirection: 'row', alignItems: 'flex-end', gap: space.md },
   valueRow: { flexDirection: 'row', alignItems: 'baseline', gap: space.xs },
   change: {
@@ -488,7 +460,6 @@ const styles = StyleSheet.create({
     borderRadius: radius.pill,
     backgroundColor: colors.surfaceMuted,
   },
-  note: { paddingVertical: space.sm },
   values: {
     gap: space.xs,
     padding: space.sm,
