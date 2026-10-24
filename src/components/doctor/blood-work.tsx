@@ -1,6 +1,6 @@
 import { ChevronsLeft, FlaskConical, TrendingDown, TrendingUp } from 'lucide-react-native';
-import { useRef, useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { useEffect, useRef, useState } from 'react';
+import { Animated, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { EmptyState } from '@/components/feedback/states';
 import { AppText } from '@/components/ui/app-text';
 import { chart, colors, fontSize, icon, radius, shadow, space } from '@/theme/tokens';
@@ -22,14 +22,19 @@ const LABELS = Object.fromEntries(TESTS.map((t) => [t.test, t.label])) as Record
 
 const ALL = 'all';
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-const CHART_HEIGHT = 240;
-const DATE_HEIGHT = 28;
+const CHART_HEIGHT = 260;
+const DATE_HEIGHT = 38;
 const VALUE_HEIGHT = 18;
 const AXIS_WIDTH = 40;
 const BAR_GAP = 2;
 const GROUP_GAP = space.lg;
 const NAME_WIDTH = 132;
 const MIN_CELL = 84;
+
+const dayMonth = (iso: string) => {
+  const [, m, d] = iso.split('-');
+  return `${Number(d)} ${MONTHS[Number(m) - 1] ?? ''}`;
+};
 
 const shortDate = (iso: string) => {
   const [y, m, d] = iso.split('-');
@@ -78,16 +83,21 @@ function Chart({
 }) {
   const [width, setWidth] = useState(0);
   const scroller = useRef<ScrollView>(null);
+  const [grow] = useState(() => new Animated.Value(0));
+  useEffect(() => {
+    Animated.timing(grow, { toValue: 1, duration: 550, useNativeDriver: false }).start();
+  }, [grow]);
   const high = Math.max(0, ...series.flatMap((s) => s.points.map((p) => p.value)));
   const step = stepFor(high);
   const top = Math.max(step, Math.ceil(high / step) * step);
   const ticks = Array.from({ length: Math.round(top / step) + 1 }, (_, i) => i * step);
   const plotH = CHART_HEIGHT - DATE_HEIGHT - VALUE_HEIGHT;
-  const barW = series.length === 1 ? 28 : series.length <= 3 ? 14 : 8;
+  const barW = series.length === 1 ? 30 : series.length <= 3 ? 16 : 10;
   const groupW = series.length * barW + (series.length - 1) * BAR_GAP;
   const slotW = Math.max(groupW + GROUP_GAP, (width - AXIS_WIDTH) / Math.max(dates.length, 1));
   const y = (v: number) => VALUE_HEIGHT + plotH - (v / top) * plotH;
   const labelled = series.length === 1;
+  const roomy = barW >= 16;
 
   return (
     <View style={styles.chartRow} onLayout={(e) => setWidth(e.nativeEvent.layout.width)}>
@@ -122,36 +132,50 @@ function Chart({
                     onPress={() => onPick(i)}
                     style={[styles.group, { width: slotW }, on && styles.groupOn]}
                   >
-                    <View style={[styles.bars, { height: VALUE_HEIGHT + plotH }]}>
+                    <View style={[styles.bars, { height: VALUE_HEIGHT + plotH }, !on && styles.dim]}>
                       {series.map((s) => {
                         const point = s.points.find((p) => p.date === date);
-                        const h = point ? Math.max(2, (point.value / top) * plotH) : 0;
+                        const h = point ? Math.max(3, (point.value / top) * plotH) : 0;
+                        const showValue = Boolean(point) && (labelled || (on && roomy));
                         return (
                           <View key={s.test} style={[styles.barSlot, { width: barW }]}>
-                            {point && labelled ? (
+                            {point && showValue ? (
                               <AppText
                                 variant="caption"
-                                weight="semibold"
+                                weight={on ? 'bold' : 'semibold'}
                                 numberOfLines={1}
-                                style={styles.barValue}
+                                style={[styles.barValue, on && styles.barValueOn]}
                               >
                                 {num(point.value)}
                               </AppText>
                             ) : null}
-                            {point ? <View style={[styles.bar, barFill(s.test), { height: h }]} /> : null}
+                            {point ? (
+                              <Animated.View
+                                style={[
+                                  styles.bar,
+                                  barFill(s.test),
+                                  { height: grow.interpolate({ inputRange: [0, 1], outputRange: [0, h] }) },
+                                ]}
+                              />
+                            ) : null}
                           </View>
                         );
                       })}
                     </View>
-                    <AppText
-                      variant="caption"
-                      tone={on ? undefined : 'muted'}
-                      weight={on ? 'semibold' : undefined}
-                      numberOfLines={1}
-                      style={styles.dateLabel}
-                    >
-                      {shortDate(date)}
-                    </AppText>
+                    <View style={styles.dateLabel}>
+                      <AppText
+                        variant="caption"
+                        tone={on ? 'primary' : 'muted'}
+                        weight={on ? 'bold' : undefined}
+                        numberOfLines={1}
+                        style={styles.dateText}
+                      >
+                        {dayMonth(date)}
+                      </AppText>
+                      <AppText variant="caption" tone="muted" numberOfLines={1} style={styles.yearText}>
+                        {date.slice(0, 4)}
+                      </AppText>
+                    </View>
                   </Pressable>
                 );
               })}
@@ -234,7 +258,8 @@ function Table({
   onPick: (t: BloodTest) => void;
 }) {
   const [width, setWidth] = useState(0);
-  const dates = [...data.dates].reverse();
+  const dates = data.dates;
+  const tableScroll = useRef<ScrollView>(null);
   const fit = width > 0 ? (width - NAME_WIDTH) / Math.max(dates.length, 1) : MIN_CELL;
   const cell = Math.max(MIN_CELL, Math.floor(fit));
   const scrolls = width > 0 && cell * dates.length > width - NAME_WIDTH + 1;
@@ -245,14 +270,14 @@ function Table({
       <View style={styles.tableHead}>
         <AppText weight="semibold">All results</AppText>
         <AppText variant="caption" tone="muted">
-          {data.dates.length} test date{data.dates.length === 1 ? '' : 's'} · newest first
+          {data.dates.length} test date{data.dates.length === 1 ? '' : 's'} · newest on the right
         </AppText>
       </View>
       {scrolls ? (
         <View style={styles.swipe}>
           <ChevronsLeft size={icon.sm} color={colors.textMuted} />
           <AppText variant="caption" tone="muted">
-            Swipe the dates left to see older results
+            Swipe right to see older results
           </AppText>
         </View>
       ) : null}
@@ -290,7 +315,13 @@ function Table({
             );
           })}
         </View>
-        <ScrollView horizontal showsHorizontalScrollIndicator={scrolls} style={styles.flex}>
+        <ScrollView
+          ref={tableScroll}
+          horizontal
+          showsHorizontalScrollIndicator={scrolls}
+          onContentSizeChange={() => tableScroll.current?.scrollToEnd({ animated: false })}
+          style={styles.flex}
+        >
           <View>
             <View style={styles.row}>
               {dates.map((date) => (
@@ -446,9 +477,19 @@ const styles = StyleSheet.create({
   groupOn: { backgroundColor: colors.primarySoft },
   bars: { flexDirection: 'row', alignItems: 'flex-end', gap: BAR_GAP },
   barSlot: { alignItems: 'center', justifyContent: 'flex-end', height: '100%' },
-  barValue: { fontSize: fontSize.xs - 1, marginBottom: space.xxs, width: 48, textAlign: 'center' },
-  bar: { width: '100%', borderTopLeftRadius: 4, borderTopRightRadius: 4 },
-  dateLabel: { height: DATE_HEIGHT, paddingTop: space.xs, fontSize: fontSize.xs - 1 },
+  barValue: {
+    fontSize: fontSize.xs - 1,
+    marginBottom: space.xxs,
+    width: 48,
+    textAlign: 'center',
+    color: colors.textMuted,
+  },
+  barValueOn: { color: colors.text },
+  bar: { width: '100%', borderTopLeftRadius: 6, borderTopRightRadius: 6 },
+  dim: { opacity: 0.45 },
+  dateLabel: { height: DATE_HEIGHT, paddingTop: space.xs, alignItems: 'center' },
+  dateText: { fontSize: fontSize.xs - 1 },
+  yearText: { fontSize: fontSize.xs - 2 },
   headline: { flexDirection: 'row', alignItems: 'flex-end', gap: space.md },
   valueRow: { flexDirection: 'row', alignItems: 'baseline', gap: space.xs },
   change: {

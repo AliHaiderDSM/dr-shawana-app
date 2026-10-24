@@ -45,6 +45,11 @@ export const doctorApi = baseApi.injectEndpoints({
       forceRefetch: ({ currentArg, previousArg }) => currentArg?.page !== previousArg?.page,
       providesTags: [{ type: 'DoctorHome', id: LIST }],
     }),
+    getDoctorMonth: build.query<DoctorAppointmentsPage, string>({
+      query: (month) => ({ url: '/doctor/appointments', params: { month } }),
+      transformResponse: unwrapData<DoctorAppointmentsPage>,
+      providesTags: [{ type: 'DoctorHome', id: LIST }],
+    }),
     getDoctorProfile: build.query<DoctorProfile, void>({
       query: () => '/doctor/profile',
       transformResponse: unwrapData<DoctorProfile>,
@@ -153,6 +158,7 @@ export const {
   useSaveDoctorRemarksMutation,
   useGetDoctorProfileQuery,
   useGetDoctorAppointmentsQuery,
+  useGetDoctorMonthQuery,
   useUpdateDoctorProfileMutation,
   useChangeDoctorPasswordMutation,
   useSaveDoctorPushTokenMutation,

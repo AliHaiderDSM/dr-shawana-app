@@ -114,11 +114,7 @@ export default function DoctorHomeScreen() {
       <View style={styles.actions}>
         <Action
           label="Appointments"
-          hint={
-            h?.counts.appointments !== undefined
-              ? `${h.counts.appointments} in every branch · upcoming and past`
-              : 'Upcoming and past, in every branch'
-          }
+          hint="Month calendar of every appointment"
           icon={CalendarDays}
           onPress={() => router.push('/doctor/appointments')}
         />
@@ -131,7 +127,7 @@ export default function DoctorHomeScreen() {
       ) : (
         <>
           <SectionHeader
-            title="Schedule"
+            title={`Today · ${h.schedule.length} appointment${h.schedule.length === 1 ? '' : 's'}`}
             actionLabel="All"
             onAction={() => router.push('/doctor/appointments')}
           />
@@ -158,8 +154,8 @@ export default function DoctorHomeScreen() {
           ) : (
             <EmptyState
               icon={CalendarCheck}
-              title="No appointments ahead"
-              message="Your next booked appointments will show here."
+              title="No appointments today"
+              message="Tap All to see the calendar of every day."
             />
           )}
 
