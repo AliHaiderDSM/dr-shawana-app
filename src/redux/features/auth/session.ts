@@ -32,11 +32,12 @@ export function signOut(notice?: string) {
   return async (dispatch: AppDispatch, getState: () => RootState) => {
     const doctor = getState().auth.role === 'doctor';
     const token = lastPushToken();
-    const request = doctor
-      ? token
-        ? dispatch(authApi.endpoints.forgetDoctorPushToken.initiate(token))
-        : Promise.resolve()
-      : dispatch(authApi.endpoints.logout.initiate());
+    const endDoctorSession = async () => {
+      if (token) await dispatch(authApi.endpoints.forgetDoctorPushToken.initiate(token));
+      const refreshToken = await sessionStorage.getRefreshToken();
+      if (refreshToken) await dispatch(authApi.endpoints.doctorLogout.initiate(refreshToken));
+    };
+    const request = doctor ? endDoctorSession() : dispatch(authApi.endpoints.logout.initiate());
     await Promise.race([request, new Promise((resolve) => setTimeout(resolve, 4_000))]).catch(
       () => undefined,
     );

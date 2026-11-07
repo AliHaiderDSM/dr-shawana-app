@@ -22,6 +22,9 @@ export const authApi = baseApi.injectEndpoints({
     forgetDoctorPushToken: build.mutation<void, string>({
       query: (token) => ({ url: '/doctor/push-token/remove', method: 'POST', body: { token } }),
     }),
+    doctorLogout: build.mutation<void, string>({
+      query: (refreshToken) => ({ url: '/auth/logout', method: 'POST', body: { refreshToken } }),
+    }),
     logout: build.mutation<void, void>({
       query: () => ({ url: '/patient/auth/logout', method: 'POST' }),
     }),
