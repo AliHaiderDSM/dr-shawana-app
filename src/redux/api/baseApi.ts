@@ -59,7 +59,7 @@ async function requestRefresh(): Promise<RefreshResult> {
   } catch {
     return { kind: 'offline' };
   }
-  if (response.status === 401 || response.status === 400) {
+  if (response.status === 401 || response.status === 400 || response.status === 403) {
     await sessionStorage.clear();
     return { kind: 'expired' };
   }
