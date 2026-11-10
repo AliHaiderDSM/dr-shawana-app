@@ -13,6 +13,7 @@ export interface Branch {
 export interface Appointment {
   id: string;
   appointmentNo: number;
+  repeatNo?: number | null;
   date: string;
   timeFrom: string;
   timeTo: string;

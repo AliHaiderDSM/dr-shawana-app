@@ -8,6 +8,7 @@ import { CardSkeleton, EmptyState, ErrorState } from '@/components/feedback/stat
 import { AppText } from '@/components/ui/app-text';
 import { colors, contentMaxWidth, icon, radius, shadow, space, touch } from '@/theme/tokens';
 import { type DoctorAppointment, useGetDoctorMonthQuery } from '@/redux/features/doctor';
+import { appointmentNumber } from '@/lib/format';
 
 const VISIT_LABEL: Record<string, string> = { new: 'New visit', followup: 'Follow up' };
 const MODE_LABEL: Record<string, string> = { physical: 'In clinic', online: 'Online' };
@@ -231,7 +232,7 @@ export default function DoctorAppointmentsScreen() {
                 date={a.date}
                 timeFrom={a.timeFrom}
                 name={a.patient.name}
-                detail={`#${a.appointmentNo} · ${VISIT_LABEL[a.visitType] ?? a.visitType} · ${MODE_LABEL[a.mode] ?? a.mode}`}
+                detail={`#${appointmentNumber(a)} · ${VISIT_LABEL[a.visitType] ?? a.visitType} · ${MODE_LABEL[a.mode] ?? a.mode}`}
                 branch={a.branch}
                 status={a.status}
                 onPress={() =>

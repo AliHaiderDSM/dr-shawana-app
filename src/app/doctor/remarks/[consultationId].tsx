@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button';
 import { RichTextView } from '@/components/ui/rich-text-view';
 import { Screen } from '@/components/ui/screen';
 import { errorMessage } from '@/lib/errors';
-import { formatDay } from '@/lib/format';
+import { appointmentNumber, formatDay } from '@/lib/format';
 import { htmlToMarkup, markupToHtml } from '@/lib/rich-text';
 import { colors, fontSize, icon, maxFontScale, radius, space, touch } from '@/theme/tokens';
 import {
@@ -93,7 +93,7 @@ function Editor({ remark, patientId }: { remark: PatientFileRemark; patientId: s
       }
     >
       <View style={styles.head}>
-        <AppText weight="semibold">Visit #{remark.appointmentNo}</AppText>
+        <AppText weight="semibold">Visit #{appointmentNumber(remark)}</AppText>
         <AppText variant="caption" tone="muted">
           {formatDay(remark.date)} · shows in the patient history and on the dashboard
         </AppText>

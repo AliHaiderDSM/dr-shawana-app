@@ -81,3 +81,7 @@ export function formatDuration(seconds: number) {
   const total = Math.max(0, Math.round(seconds));
   return `${Math.floor(total / 60)}:${String(total % 60).padStart(2, '0')}`;
 }
+
+export function appointmentNumber(a: { appointmentNo: number; repeatNo?: number | null }) {
+  return a.repeatNo ? `${a.appointmentNo}.${a.repeatNo}` : String(a.appointmentNo);
+}

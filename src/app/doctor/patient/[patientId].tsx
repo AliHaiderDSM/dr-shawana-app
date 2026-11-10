@@ -30,7 +30,7 @@ import { Screen } from '@/components/ui/screen';
 import { StatusBadge } from '@/components/ui/status-badge';
 import { useRefresh } from '@/hooks/use-refresh';
 import { errorMessage } from '@/lib/errors';
-import { formatDate, formatDay, initials } from '@/lib/format';
+import { appointmentNumber, formatDate, formatDay, initials } from '@/lib/format';
 import { groupRecords } from '@/lib/record-groups';
 import { htmlToMarkup } from '@/lib/rich-text';
 import { colors, icon, radius, shadow, space, touch } from '@/theme/tokens';
@@ -265,7 +265,7 @@ function Remarks({ file }: { file: PatientFile }) {
       {file.remarks.map((r, index) => (
         <Entry key={r.consultationId} date={r.date} last={index === file.remarks.length - 1}>
           <View style={styles.between}>
-            <AppText weight="semibold">Visit #{r.appointmentNo}</AppText>
+            <AppText weight="semibold">Visit #{appointmentNumber(r)}</AppText>
             {r.editable ? <StatusBadge label="Yours" tone="primary" /> : null}
           </View>
           <Source verb="Written by" doctor={r.doctor} branch={r.branch} />

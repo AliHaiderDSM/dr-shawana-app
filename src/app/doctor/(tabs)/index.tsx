@@ -7,7 +7,7 @@ import { AppText } from '@/components/ui/app-text';
 import { SectionHeader } from '@/components/ui/bits';
 import { Screen } from '@/components/ui/screen';
 import { useRefresh } from '@/hooks/use-refresh';
-import { greeting, initials } from '@/lib/format';
+import { appointmentNumber, greeting, initials } from '@/lib/format';
 import { colors, icon, radius, space, touch } from '@/theme/tokens';
 import { useGetDoctorHomeQuery } from '@/redux/features/doctor';
 
@@ -139,7 +139,7 @@ export default function DoctorHomeScreen() {
                   date={a.date}
                   timeFrom={a.timeFrom}
                   name={a.patient.name}
-                  detail={`#${a.appointmentNo} · ${VISIT_LABEL[a.visitType] ?? a.visitType} · ${MODE_LABEL[a.mode] ?? a.mode}`}
+                  detail={`#${appointmentNumber(a)} · ${VISIT_LABEL[a.visitType] ?? a.visitType} · ${MODE_LABEL[a.mode] ?? a.mode}`}
                   branch={a.branch}
                   status={a.status}
                   onPress={() =>

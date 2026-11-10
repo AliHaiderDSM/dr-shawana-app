@@ -13,6 +13,7 @@ export interface DoctorHome {
   schedule: {
     id: string;
     appointmentNo: number;
+    repeatNo?: number | null;
     date: string;
     timeFrom: string;
     timeTo: string;
@@ -36,6 +37,7 @@ export type AppointmentsWhen = 'upcoming' | 'past';
 export interface DoctorAppointment {
   id: string;
   appointmentNo: number;
+  repeatNo?: number | null;
   date: string;
   timeFrom: string;
   timeTo: string;
@@ -71,6 +73,7 @@ export interface DoctorPatient {
 export interface PatientFileAppointment {
   id: string;
   appointmentNo: number;
+  repeatNo?: number | null;
   date: string;
   timeFrom: string;
   timeTo: string;
@@ -101,6 +104,7 @@ export interface PatientFileRemark {
   consultationId: string;
   date: string;
   appointmentNo: number;
+  repeatNo?: number | null;
   doctor: string | null;
   branch?: string | null;
   remarks: string | null;

@@ -20,7 +20,7 @@ import { Screen } from '@/components/ui/screen';
 import { StatusBadge } from '@/components/ui/status-badge';
 import { useOpenDocument } from '@/hooks/use-open-document';
 import { useRefresh } from '@/hooks/use-refresh';
-import { formatDay, formatTime } from '@/lib/format';
+import { appointmentNumber, formatDay, formatTime } from '@/lib/format';
 import { MODE_LABELS, VISIT_LABELS, appointmentStatus } from '@/lib/labels';
 import { space } from '@/theme/tokens';
 import { useGetAppointmentQuery } from '@/redux/features/appointments';
@@ -62,7 +62,7 @@ export default function AppointmentDetailScreen() {
           {formatDay(a.date)}
         </AppText>
         <AppText variant="caption" tone="muted">
-          Appointment #{a.appointmentNo} · {VISIT_LABELS[a.visitType]}
+          Appointment #{appointmentNumber(a)} · {VISIT_LABELS[a.visitType]}
         </AppText>
       </Card>
 
