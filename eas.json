@@ -8,8 +8,8 @@
       "developmentClient": true,
       "distribution": "internal",
       "env": {
-        "EXPO_PUBLIC_API_URL": "https://dr-shawana-shared-backend.vercel.app/api/v1",
-        "EXPO_PUBLIC_PRIVACY_POLICY_URL": "https://dr-shawana-shared-backend.vercel.app/privacy"
+        "EXPO_PUBLIC_API_URL": "https://api.dsmclinics.com/api/v1",
+        "EXPO_PUBLIC_PRIVACY_POLICY_URL": "https://api.dsmclinics.com/privacy"
       },
       "channel": "development"
     },
@@ -19,16 +19,16 @@
         "buildType": "apk"
       },
       "env": {
-        "EXPO_PUBLIC_API_URL": "https://dr-shawana-shared-backend.vercel.app/api/v1",
-        "EXPO_PUBLIC_PRIVACY_POLICY_URL": "https://dr-shawana-shared-backend.vercel.app/privacy"
+        "EXPO_PUBLIC_API_URL": "https://api.dsmclinics.com/api/v1",
+        "EXPO_PUBLIC_PRIVACY_POLICY_URL": "https://api.dsmclinics.com/privacy"
       },
       "channel": "preview"
     },
     "production": {
       "autoIncrement": true,
       "env": {
-        "EXPO_PUBLIC_API_URL": "https://dr-shawana-shared-backend.vercel.app/api/v1",
-        "EXPO_PUBLIC_PRIVACY_POLICY_URL": "https://dr-shawana-shared-backend.vercel.app/privacy"
+        "EXPO_PUBLIC_API_URL": "https://api.dsmclinics.com/api/v1",
+        "EXPO_PUBLIC_PRIVACY_POLICY_URL": "https://api.dsmclinics.com/privacy"
       },
       "channel": "production"
     }
