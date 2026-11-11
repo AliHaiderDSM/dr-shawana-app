@@ -69,7 +69,7 @@ function Success({ request, onAnother }: { request: ManagementRequest; onAnother
 }
 
 export default function ContactScreen() {
-  const params = useLocalSearchParams<{ category?: string }>();
+  const params = useLocalSearchParams<{ category?: string; subject?: string; message?: string }>();
   const [createRequest, { isLoading, error, reset }] = useCreateRequestMutation();
   const [sent, setSent] = useState<ManagementRequest | null>(null);
   const form = useForm<Values>({
@@ -82,7 +82,9 @@ export default function ContactScreen() {
     if (category && (REQUEST_CATEGORIES as readonly string[]).includes(category)) {
       form.setValue('category', category as RequestCategory);
     }
-  }, [params.category, form]);
+    if (params.subject) form.setValue('subject', params.subject.slice(0, 150));
+    if (params.message) form.setValue('message', params.message);
+  }, [params.category, params.subject, params.message, form]);
 
   const submit = form.handleSubmit(async (values) => {
     if (isLoading) return;

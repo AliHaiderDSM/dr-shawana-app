@@ -13,10 +13,10 @@
     "userInterfaceStyle": "light",
     "ios": {
       "supportsTablet": false,
-      "bundleIdentifier": "com.dsmclinic.patient"
+      "bundleIdentifier": "com.dsmclinic.app"
     },
     "android": {
-      "package": "com.dsmclinic.patient",
+      "package": "com.dsmclinic.app",
       "googleServicesFile": "./google-services.json",
       "adaptiveIcon": {
         "backgroundColor": "#FFFFFF",
@@ -28,9 +28,11 @@
       "softwareKeyboardLayoutMode": "resize",
       "permissions": [
         "android.permission.MODIFY_AUDIO_SETTINGS",
-        "android.permission.FOREGROUND_SERVICE",
-        "android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK",
         "android.permission.RECORD_AUDIO"
+      ],
+      "blockedPermissions": [
+        "android.permission.SYSTEM_ALERT_WINDOW",
+        "android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK"
       ]
     },
     "plugins": [
@@ -70,7 +72,8 @@
       [
         "expo-audio",
         {
-          "microphonePermission": "DSM Clinic uses the microphone only when you record a voice message in a chat."
+          "microphonePermission": "DSM Clinic uses the microphone only when you record a voice message in a chat.",
+          "enableBackgroundPlayback": false
         }
       ],
       "expo-asset",

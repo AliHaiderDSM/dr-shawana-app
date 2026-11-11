@@ -9,8 +9,11 @@ import {
   MapPin,
   Pencil,
   Phone,
+  ShieldCheck,
   UserRound,
+  UserX,
 } from 'lucide-react-native';
+import * as WebBrowser from 'expo-web-browser';
 import { useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 import { CardSkeleton, ErrorState } from '@/components/feedback/states';
@@ -20,6 +23,7 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Screen } from '@/components/ui/screen';
 import { useRefresh } from '@/hooks/use-refresh';
+import { PRIVACY_POLICY_URL } from '@/lib/config';
 import { formatDate, initials } from '@/lib/format';
 import { useAppDispatch } from '@/redux/hooks';
 import { colors, radius, space, touch } from '@/theme/tokens';
@@ -113,6 +117,30 @@ export default function ProfileScreen() {
               icon={ListChecks}
               variant="secondary"
               onPress={() => router.push('/requests')}
+            />
+            {PRIVACY_POLICY_URL ? (
+              <Button
+                label="Privacy policy"
+                icon={ShieldCheck}
+                variant="secondary"
+                onPress={() => void WebBrowser.openBrowserAsync(PRIVACY_POLICY_URL!)}
+              />
+            ) : null}
+            <Button
+              label="Delete my account"
+              icon={UserX}
+              variant="secondary"
+              onPress={() =>
+                router.push({
+                  pathname: '/contact',
+                  params: {
+                    category: 'other',
+                    subject: 'Delete my account',
+                    message:
+                      'Please delete my DSM Clinic app account and the personal data the clinic is not required to keep.',
+                  },
+                })
+              }
             />
             <Button label="Log out" icon={LogOut} variant="danger" loading={leaving} onPress={logout} />
           </View>
