@@ -1,5 +1,5 @@
 import { Tabs } from 'expo-router';
-import { FileText, History, House, UserRound } from 'lucide-react-native';
+import { History, House, Pill, UserRound } from 'lucide-react-native';
 import { Pressable, StyleSheet, View } from 'react-native';
 import { AppText } from '@/components/ui/app-text';
 import { WhatsAppIcon } from '@/components/ui/whatsapp-icon';
@@ -92,11 +92,10 @@ export default function TabsLayout() {
         }}
       />
       <Tabs.Screen
-        name="records"
+        name="prescriptions"
         options={{
-          title: 'Medical records',
-          tabBarLabel: 'Records',
-          tabBarIcon: ({ color, size }) => <FileText color={color} size={size} />,
+          title: 'Prescriptions',
+          tabBarIcon: ({ color, size }) => <Pill color={color} size={size} />,
         }}
       />
       <Tabs.Screen

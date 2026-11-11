@@ -1,11 +1,11 @@
 import { router, type Href } from 'expo-router';
 import {
   ChevronRight,
+  ClipboardList,
   CalendarDays,
   CalendarPlus,
   FileText,
   MessageSquarePlus,
-  Pill,
   ShieldCheck,
   Sparkles,
   BookOpen,
@@ -27,7 +27,7 @@ import { useGetChatUnreadQuery } from '@/redux/features/chat';
 import { useGetOverviewQuery } from '@/redux/features/patient';
 
 const QUICK: { label: string; icon: LucideIcon; href: Href }[] = [
-  { label: 'Prescriptions', icon: Pill, href: '/prescriptions' },
+  { label: 'Medical history', icon: ClipboardList, href: '/medical-history' },
   { label: 'Medical records', icon: FileText, href: '/documents' },
   { label: 'Appointments', icon: CalendarDays, href: '/appointments' },
   { label: 'Educational resources', icon: BookOpen, href: '/resources' },
