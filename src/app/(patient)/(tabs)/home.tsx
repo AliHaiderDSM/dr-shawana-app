@@ -6,6 +6,7 @@ import {
   CalendarPlus,
   FileText,
   MessageSquarePlus,
+  Pill,
   ShieldCheck,
   Sparkles,
   BookOpen,
@@ -28,6 +29,7 @@ import { useGetOverviewQuery } from '@/redux/features/patient';
 
 const QUICK: { label: string; icon: LucideIcon; href: Href }[] = [
   { label: 'Medical history', icon: ClipboardList, href: '/medical-history' },
+  { label: 'Medicines', icon: Pill, href: '/medicines' },
   { label: 'Medical records', icon: FileText, href: '/documents' },
   { label: 'Appointments', icon: CalendarDays, href: '/appointments' },
   { label: 'Educational resources', icon: BookOpen, href: '/resources' },
