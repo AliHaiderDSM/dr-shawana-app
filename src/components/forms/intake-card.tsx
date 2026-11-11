@@ -1,4 +1,4 @@
-import { Check, Save } from 'lucide-react-native';
+import { Check, ChevronDown, ChevronUp, Save } from 'lucide-react-native';
 import { useState } from 'react';
 import { Alert, Pressable, StyleSheet, View } from 'react-native';
 import { AppText } from '@/components/ui/app-text';
@@ -9,15 +9,21 @@ import { TextField } from '@/components/ui/text-field';
 import { errorMessage, fieldErrors } from '@/lib/errors';
 import {
   bmiOf,
+  dateInput,
+  type FamilyEntry,
   feetInput,
   type IntakeField,
   type IntakePart,
   type IntakeValues,
-  missing,
+  isNoneSurgery,
   numberInput,
+  problems,
+  type SurgeryEntry,
   toApi,
   toggleCheck,
+  toggleSurgery,
   toValues,
+  updateFamily,
   visible,
 } from '@/lib/intake-fields';
 import { useSaveIntakeMutation } from '@/redux/features/intake';
@@ -53,6 +59,155 @@ function CheckRow({
   );
 }
 
+function ErrorText({ error }: { error?: string }) {
+  return error ? (
+    <AppText variant="caption" tone="danger">
+      {error}
+    </AppText>
+  ) : null;
+}
+
+function SurgeriesInput({
+  field,
+  value,
+  error,
+  disabled,
+  onChange,
+}: {
+  field: Extract<IntakeField, { kind: 'surgeries' }>;
+  value: SurgeryEntry[];
+  error?: string;
+  disabled: boolean;
+  onChange: (next: SurgeryEntry[]) => void;
+}) {
+  return (
+    <View style={styles.checks}>
+      <AppText variant="label">{field.label}</AppText>
+      {field.options.map(([type, label]) => {
+        const entry = value.find((s) => s.type === type);
+        return (
+          <View key={type} style={styles.group}>
+            <CheckRow
+              label={label}
+              checked={Boolean(entry)}
+              disabled={disabled}
+              onPress={() => onChange(toggleSurgery(value, type))}
+            />
+            {entry && !isNoneSurgery(type) ? (
+              <TextField
+                label={`${label}: year`}
+                value={entry.year}
+                keyboardType="number-pad"
+                maxLength={4}
+                editable={!disabled}
+                placeholder="e.g. 2015"
+                onChangeText={(year) =>
+                  onChange(value.map((s) => (s.type === type ? { ...s, year: year.replace(/\D/g, '') } : s)))
+                }
+              />
+            ) : null}
+          </View>
+        );
+      })}
+      <ErrorText error={error} />
+    </View>
+  );
+}
+
+function FamilyInput({
+  field,
+  value,
+  disabled,
+  onChange,
+}: {
+  field: Extract<IntakeField, { kind: 'family' }>;
+  value: FamilyEntry[];
+  disabled: boolean;
+  onChange: (next: FamilyEntry[]) => void;
+}) {
+  const [open, setOpen] = useState<string | null>(null);
+  const entryOf = (relative: string): FamilyEntry =>
+    value.find((e) => e.relative === relative) ?? { relative, who: '', conditions: [], other: '' };
+  const save = (next: FamilyEntry) => onChange(updateFamily(value, field.relatives, next));
+  return (
+    <View style={styles.checks}>
+      <AppText variant="label">{field.label}</AppText>
+      <AppText variant="caption" tone="muted">
+        Open a family member and tick the conditions they had.
+      </AppText>
+      {field.relatives.map(([relative, label]) => {
+        const entry = entryOf(relative);
+        const expanded = open === relative;
+        const count = entry.conditions.length;
+        const Chevron = expanded ? ChevronUp : ChevronDown;
+        return (
+          <View key={relative} style={[styles.family, count > 0 && styles.familyOn]}>
+            <Pressable
+              accessibilityRole="button"
+              accessibilityState={{ expanded }}
+              accessibilityLabel={`${label}, ${count ? `${count} selected` : 'none selected'}`}
+              onPress={() => setOpen(expanded ? null : relative)}
+              style={styles.familyHead}
+            >
+              <View style={styles.flex}>
+                <AppText weight="semibold">{label}</AppText>
+                <AppText variant="caption" tone={count ? 'primary' : 'muted'}>
+                  {count ? `${count} selected` : 'None'}
+                </AppText>
+              </View>
+              <Chevron size={icon.md} color={colors.textMuted} />
+            </Pressable>
+            {expanded ? (
+              <View style={styles.group}>
+                {relative === 'close_family' ? (
+                  <TextField
+                    label="Who?"
+                    placeholder="e.g. aunt"
+                    value={entry.who}
+                    maxLength={100}
+                    editable={!disabled}
+                    onChangeText={(who) => save({ ...entry, who })}
+                  />
+                ) : null}
+                {field.conditions.map(([condition, conditionLabel]) => {
+                  const checked = entry.conditions.includes(condition);
+                  return (
+                    <View key={condition} style={styles.group}>
+                      <CheckRow
+                        label={conditionLabel}
+                        checked={checked}
+                        disabled={disabled}
+                        onPress={() =>
+                          save({
+                            ...entry,
+                            conditions: checked
+                              ? entry.conditions.filter((c) => c !== condition)
+                              : [...entry.conditions, condition],
+                            other: condition === 'other' && checked ? '' : entry.other,
+                          })
+                        }
+                      />
+                      {condition === 'other' && checked ? (
+                        <TextField
+                          label="Which?"
+                          value={entry.other}
+                          maxLength={500}
+                          editable={!disabled}
+                          onChangeText={(other) => save({ ...entry, other })}
+                        />
+                      ) : null}
+                    </View>
+                  );
+                })}
+              </View>
+            ) : null}
+          </View>
+        );
+      })}
+    </View>
+  );
+}
+
 function FieldInput({
   field,
   values,
@@ -64,11 +219,25 @@ function FieldInput({
   values: IntakeValues;
   error?: string;
   disabled: boolean;
-  onChange: (key: string, value: string | string[]) => void;
+  onChange: (key: string, value: unknown) => void;
 }) {
   const label = field.required ? `${field.label} *` : field.label;
   const value = values[field.key];
+  const str = typeof value === 'string' ? value : '';
   switch (field.kind) {
+    case 'heading':
+      return (
+        <View style={styles.heading}>
+          <AppText variant="subheading" tone="primary">
+            {field.label}
+          </AppText>
+          {field.hint ? (
+            <AppText variant="label" tone="muted">
+              {field.hint}
+            </AppText>
+          ) : null}
+        </View>
+      );
     case 'bmi': {
       const bmi = bmiOf(values);
       return (
@@ -82,18 +251,27 @@ function FieldInput({
         </View>
       );
     }
+    case 'bool':
+      return (
+        <CheckRow
+          label={field.label}
+          checked={value === true}
+          disabled={disabled}
+          onPress={() => onChange(field.key, value !== true)}
+        />
+      );
     case 'choice':
       return (
         <ChoiceChips
           label={label}
           options={field.options.map(([v, l]) => ({ value: v, label: l }))}
-          value={typeof value === 'string' && value ? value : undefined}
-          onChange={(next) => !disabled && onChange(field.key, next === value ? '' : next)}
+          value={str || undefined}
+          onChange={(next) => !disabled && onChange(field.key, next === str ? '' : next)}
           error={error}
         />
       );
     case 'checks': {
-      const selected = Array.isArray(value) ? value : [];
+      const selected = Array.isArray(value) ? (value as string[]) : [];
       return (
         <View style={styles.checks}>
           <AppText variant="label">{label}</AppText>
@@ -118,20 +296,48 @@ function FieldInput({
               </View>
             );
           })}
-          {error ? (
-            <AppText variant="caption" tone="danger">
-              {error}
-            </AppText>
-          ) : null}
+          <ErrorText error={error} />
         </View>
       );
     }
+    case 'surgeries':
+      return (
+        <SurgeriesInput
+          field={field}
+          value={Array.isArray(value) ? (value as SurgeryEntry[]) : []}
+          error={error}
+          disabled={disabled}
+          onChange={(next) => onChange(field.key, next)}
+        />
+      );
+    case 'family':
+      return (
+        <FamilyInput
+          field={field}
+          value={Array.isArray(value) ? (value as FamilyEntry[]) : []}
+          disabled={disabled}
+          onChange={(next) => onChange(field.key, next)}
+        />
+      );
+    case 'date':
+      return (
+        <TextField
+          label={label}
+          hint={field.hint}
+          placeholder="DD-MM-YYYY"
+          value={str}
+          keyboardType="number-pad"
+          editable={!disabled}
+          error={error}
+          onChangeText={(raw) => onChange(field.key, dateInput(raw))}
+        />
+      );
     case 'number':
       return (
         <TextField
           label={label}
           hint={field.hint}
-          value={typeof value === 'string' ? value : ''}
+          value={str}
           keyboardType={field.integer || field.feet ? 'number-pad' : 'decimal-pad'}
           editable={!disabled}
           error={error}
@@ -144,7 +350,7 @@ function FieldInput({
       return (
         <TextField
           label={label}
-          value={typeof value === 'string' ? value : ''}
+          value={str}
           multiline={field.multiline}
           editable={!disabled}
           error={error}
@@ -170,7 +376,7 @@ export function IntakeCard({
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [save, { isLoading }] = useSaveIntakeMutation();
 
-  const onChange = (key: string, value: string | string[]) => {
+  const onChange = (key: string, value: unknown) => {
     setValues((current) => ({ ...current, [key]: value }));
     setErrors((current) => {
       if (!current[key]) return current;
@@ -181,9 +387,9 @@ export function IntakeCard({
   };
 
   const submit = async () => {
-    const empty = missing(part, values);
-    if (empty.length) {
-      setErrors(Object.fromEntries(empty.map((key) => [key, 'Required'])));
+    const found = problems(part, values);
+    if (Object.keys(found).length) {
+      setErrors(found);
       return;
     }
     try {
@@ -234,6 +440,12 @@ const styles = StyleSheet.create({
   fields: { gap: space.md },
   checks: { gap: space.sm },
   group: { gap: space.xs },
+  heading: {
+    gap: space.xxs,
+    paddingTop: space.md,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: colors.border,
+  },
   check: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -262,4 +474,13 @@ const styles = StyleSheet.create({
     borderRadius: radius.md,
     backgroundColor: colors.surfaceMuted,
   },
+  family: {
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: radius.md,
+    padding: space.md,
+    gap: space.sm,
+  },
+  familyOn: { borderColor: colors.primary },
+  familyHead: { flexDirection: 'row', alignItems: 'center', gap: space.sm },
 });

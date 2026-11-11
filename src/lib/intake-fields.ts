@@ -1,6 +1,6 @@
 export type IntakeKey = 'basic_info' | 'medical_history' | 'additional_symptoms';
 
-export type IntakeValues = Record<string, string | string[]>;
+export type IntakeValues = Record<string, unknown>;
 
 type Option = readonly [value: string, label: string];
 
@@ -12,11 +12,28 @@ interface Base {
   when?: (values: IntakeValues) => boolean;
 }
 
+export interface SurgeryEntry {
+  type: string;
+  year: string;
+}
+
+export interface FamilyEntry {
+  relative: string;
+  who: string;
+  conditions: string[];
+  other: string;
+}
+
 export type IntakeField =
+  | (Base & { kind: 'heading' })
   | (Base & { kind: 'text'; multiline?: boolean })
   | (Base & { kind: 'number'; integer?: boolean; feet?: boolean })
+  | (Base & { kind: 'date' })
+  | (Base & { kind: 'bool' })
   | (Base & { kind: 'choice'; options: readonly Option[] })
   | (Base & { kind: 'checks'; groups: readonly { title?: string; options: readonly Option[] }[] })
+  | (Base & { kind: 'surgeries'; options: readonly Option[] })
+  | (Base & { kind: 'family'; relatives: readonly Option[]; conditions: readonly Option[] })
   | (Base & { kind: 'bmi' });
 
 export interface IntakePart {
@@ -31,7 +48,15 @@ const YES_NO: readonly Option[] = [
   ['no', 'No'],
 ];
 
+const YES_NO_OCCASIONAL: readonly Option[] = [
+  ['yes', 'Yes'],
+  ['no', 'No'],
+  ['occasionally', 'Occasionally'],
+];
+
+const is = (key: string, value: string) => (v: IntakeValues) => v[key] === value;
 const partnered = (v: IntakeValues) => Boolean(v.maritalStatus) && v.maritalStatus !== 'single';
+const NONE_SURGERY = 'no_surgery';
 
 export const INTAKE_PARTS: IntakePart[] = [
   {
@@ -80,19 +105,83 @@ export const INTAKE_PARTS: IntakePart[] = [
     ],
   },
   {
-    id: 'visit',
+    id: 'history',
     key: 'medical_history',
-    title: 'About this visit',
+    title: 'Medical history',
     fields: [
       { kind: 'text', key: 'majorComplaint', label: 'Major complaint', multiline: true },
-      { kind: 'text', key: 'currentMedications', label: 'Current medications', multiline: true },
-    ],
-  },
-  {
-    id: 'diagnosed',
-    key: 'medical_history',
-    title: 'Have you ever been diagnosed with?',
-    fields: [
+      { kind: 'heading', key: 'h-hormones', label: 'Hormones, contraception and periods' },
+      {
+        kind: 'choice',
+        key: 'hormoneTherapy',
+        label: 'Have you ever used hormone therapy?',
+        options: [
+          ['never', 'Never'],
+          ['currently_using', 'Currently using'],
+          ['previously_used', 'Previously used'],
+        ],
+      },
+      { kind: 'text', key: 'hormonesUsed', label: 'Which hormones have you used?', multiline: true },
+      {
+        kind: 'choice',
+        key: 'contraception',
+        label: 'Are you using any form of contraception?',
+        options: [
+          ['yes', 'Yes'],
+          ['no', 'No'],
+          ['not_needed', 'Not needed'],
+        ],
+      },
+      { kind: 'choice', key: 'havingPeriods', label: 'Are you still having periods?', options: YES_NO },
+      {
+        kind: 'date',
+        key: 'lastPeriodDate',
+        label: 'Last menstrual period date',
+        required: true,
+        hint: 'Day-month-year, e.g. 05-10-2026',
+        when: is('havingPeriods', 'yes'),
+      },
+      {
+        kind: 'choice',
+        key: 'cycle',
+        label: 'Cycle',
+        required: true,
+        options: [
+          ['regular', 'Regular'],
+          ['irregular', 'Irregular'],
+        ],
+        when: is('havingPeriods', 'yes'),
+      },
+      {
+        kind: 'choice',
+        key: 'flow',
+        label: 'Periods flow',
+        options: [
+          ['normal', 'Normal'],
+          ['heavy', 'Heavy'],
+          ['low', 'Low'],
+        ],
+        when: (v) => v.havingPeriods === 'yes' && Boolean(v.cycle),
+      },
+      {
+        kind: 'bool',
+        key: 'dub',
+        label: 'DUB (Dysfunctional Uterine Bleed)',
+        when: is('cycle', 'irregular'),
+      },
+      {
+        kind: 'bool',
+        key: 'oligomenorrhea',
+        label: 'Oligomenorrhea (Infrequent)',
+        when: is('cycle', 'irregular'),
+      },
+      {
+        kind: 'text',
+        key: 'periodsNote',
+        label: 'Periods note',
+        multiline: true,
+        when: is('havingPeriods', 'no'),
+      },
       {
         kind: 'choice',
         key: 'menopauseDiagnosed',
@@ -206,12 +295,113 @@ export const INTAKE_PARTS: IntakePart[] = [
             options: [
               ['recurrent_uti', 'Recurrent UTI'],
               ['vaginal_infections', 'Vaginal Infections'],
+              ['std', 'STD'],
               ['no_genitourinary', 'None'],
             ],
           },
         ],
       },
       { kind: 'text', key: 'otherConditions', label: 'Any other', multiline: true },
+      {
+        kind: 'surgeries',
+        key: 'surgeries',
+        label: 'Surgical history',
+        options: [
+          ['hysterectomy', 'Hysterectomy'],
+          ['ovaries_removed', 'Ovaries Removed'],
+          ['c_section', 'C-Section'],
+          ['tubal_ligation', 'Tubal Ligation'],
+          ['myomectomy', 'Myomectomy'],
+          ['endometriosis_surgery', 'Endometriosis Surgery'],
+          ['breast_surgery', 'Breast Surgery'],
+          ['bariatric_surgery', 'Bariatric Surgery'],
+          ['other', 'Other'],
+          [NONE_SURGERY, 'None'],
+        ],
+      },
+      {
+        kind: 'text',
+        key: 'otherSurgery',
+        label: 'Other surgery',
+        when: (v) =>
+          Array.isArray(v.surgeries) && (v.surgeries as SurgeryEntry[]).some((s) => s.type === 'other'),
+      },
+      {
+        kind: 'heading',
+        key: 'h-family',
+        label: 'Family history',
+        hint: 'Has your mother, father, sister, or another close family member ever been diagnosed with any of the following conditions?',
+      },
+      {
+        kind: 'family',
+        key: 'familyHistory',
+        label: 'Family members',
+        relatives: [
+          ['mother', 'Mother'],
+          ['father', 'Father'],
+          ['sister', 'Sister'],
+          ['close_family', 'Any Close Family Member'],
+        ],
+        conditions: [
+          ['breast_cancer', 'Breast Cancer'],
+          ['ovarian_cancer', 'Ovarian Cancer'],
+          ['endometrial_cancer', 'Endometrial Cancer'],
+          ['osteoporosis', 'Osteoporosis'],
+          ['hip_fracture', 'Hip Fracture'],
+          ['heart_disease', 'Heart Disease'],
+          ['hypertension', 'Hypertension'],
+          ['diabetes', 'Diabetes'],
+          ['early_menopause', 'Early Menopause'],
+          ['dementia', 'Dementia'],
+          ['other', 'Other'],
+        ],
+      },
+      { kind: 'heading', key: 'h-medications', label: 'Medications, allergies and lifestyle' },
+      { kind: 'text', key: 'currentMedications', label: 'Current medications', multiline: true },
+      {
+        kind: 'choice',
+        key: 'hasAllergies',
+        label: 'Any allergies to medications, foods or other substances?',
+        options: YES_NO,
+      },
+      {
+        kind: 'text',
+        key: 'allergies',
+        label: 'Allergy details',
+        required: true,
+        multiline: true,
+        when: is('hasAllergies', 'yes'),
+      },
+      { kind: 'choice', key: 'alcohol', label: 'Do you take alcohol?', options: YES_NO_OCCASIONAL },
+      { kind: 'choice', key: 'smoking', label: 'Do you smoke?', options: YES_NO_OCCASIONAL },
+      { kind: 'choice', key: 'exercise', label: 'Do you exercise regularly?', options: YES_NO_OCCASIONAL },
+      {
+        kind: 'choice',
+        key: 'followsDiet',
+        label: 'Are you following a specific diet plan?',
+        options: YES_NO,
+      },
+      { kind: 'text', key: 'dietName', label: 'Diet name', required: true, when: is('followsDiet', 'yes') },
+      {
+        kind: 'checks',
+        key: 'relationship',
+        label: 'Relationship status',
+        groups: [
+          {
+            options: [
+              ['abusive', 'Abusive'],
+              ['conflicted', 'Conflicted'],
+              ['healthy', 'Healthy'],
+            ],
+          },
+        ],
+      },
+      {
+        kind: 'text',
+        key: 'relationshipSituation',
+        label: 'What is your current relationship situation?',
+        multiline: true,
+      },
     ],
   },
   {
@@ -247,7 +437,7 @@ export const INTAKE_PARTS: IntakePart[] = [
   },
 ];
 
-const isInput = (f: IntakeField) => f.kind !== 'bmi';
+const isInput = (f: IntakeField) => f.kind !== 'bmi' && f.kind !== 'heading';
 
 export const visible = (f: IntakeField, values: IntakeValues) => !f.when || f.when(values);
 
@@ -261,6 +451,27 @@ export function numberInput(raw: string, integer?: boolean) {
   const cleaned = raw.replace(/[^\d.]/g, '');
   const [whole = '', ...rest] = cleaned.split('.');
   return rest.length ? `${whole.slice(0, 3)}.${rest.join('').slice(0, 2)}` : whole.slice(0, 3);
+}
+
+export function dateInput(raw: string) {
+  const digits = raw.replace(/\D/g, '').slice(0, 8);
+  if (digits.length <= 2) return digits;
+  if (digits.length <= 4) return `${digits.slice(0, 2)}-${digits.slice(2)}`;
+  return `${digits.slice(0, 2)}-${digits.slice(2, 4)}-${digits.slice(4)}`;
+}
+
+const isoToDisplay = (iso: string) => {
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(iso);
+  return m ? `${m[3]}-${m[2]}-${m[1]}` : iso;
+};
+
+export function displayToIso(display: string) {
+  const m = /^(\d{2})-(\d{2})-(\d{4})$/.exec(display);
+  if (!m) return null;
+  const [, d, mo, y] = m;
+  const date = new Date(`${y}-${mo}-${d}T00:00:00Z`);
+  if (Number.isNaN(date.getTime()) || date.getUTCDate() !== Number(d)) return null;
+  return `${y}-${mo}-${d}`;
 }
 
 export function bmiOf(values: IntakeValues) {
@@ -281,6 +492,8 @@ export function bmiOf(values: IntakeValues) {
   return { value: bmi.toFixed(1), label };
 }
 
+const text = (raw: unknown) => (raw === null || raw === undefined ? '' : String(raw));
+
 export function toValues(
   part: IntakePart,
   data: Record<string, unknown> | null,
@@ -290,26 +503,63 @@ export function toValues(
   const values: IntakeValues = {};
   for (const f of part.fields.filter(isInput)) {
     const raw = source[f.key];
-    values[f.key] =
-      f.kind === 'checks'
-        ? Array.isArray(raw)
-          ? raw.filter((v): v is string => typeof v === 'string')
-          : []
-        : raw === null || raw === undefined
-          ? ''
-          : String(raw);
+    switch (f.kind) {
+      case 'checks':
+        values[f.key] = Array.isArray(raw) ? raw.filter((v): v is string => typeof v === 'string') : [];
+        break;
+      case 'bool':
+        values[f.key] = raw === true;
+        break;
+      case 'date':
+        values[f.key] = typeof raw === 'string' ? isoToDisplay(raw) : '';
+        break;
+      case 'surgeries':
+        values[f.key] = Array.isArray(raw)
+          ? (raw as { type?: unknown; year?: unknown }[])
+              .filter((s) => typeof s?.type === 'string')
+              .map((s) => ({ type: String(s.type), year: text(s.year) }))
+          : [];
+        break;
+      case 'family':
+        values[f.key] = Array.isArray(raw)
+          ? (raw as Partial<FamilyEntry>[])
+              .filter((e) => typeof e?.relative === 'string')
+              .map((e) => ({
+                relative: String(e.relative),
+                who: text(e.who),
+                conditions: Array.isArray(e.conditions) ? e.conditions.map(String) : [],
+                other: text(e.other),
+              }))
+          : [];
+        break;
+      default:
+        values[f.key] = text(raw);
+    }
   }
   return values;
 }
 
+export function problems(part: IntakePart, values: IntakeValues) {
+  const result: Record<string, string> = {};
+  for (const f of part.fields) {
+    if (!isInput(f) || !visible(f, values)) continue;
+    const v = values[f.key];
+    const empty = Array.isArray(v) ? v.length === 0 : typeof v === 'string' ? !v.trim() : !v;
+    if (f.required && empty) result[f.key] = 'Required';
+    else if (f.kind === 'date' && typeof v === 'string' && v.trim() && !displayToIso(v.trim()))
+      result[f.key] = 'Use day-month-year, e.g. 05-10-2026';
+    else if (f.kind === 'surgeries' && Array.isArray(v)) {
+      const bad = (v as SurgeryEntry[]).find((s) => s.year && !/^(19|20)\d{2}$/.test(s.year));
+      if (bad) result[f.key] = 'Write the year with 4 digits, e.g. 2015';
+    }
+  }
+  return result;
+}
+
 export function missing(part: IntakePart, values: IntakeValues) {
-  return part.fields
-    .filter((f) => isInput(f) && f.required && visible(f, values))
-    .filter((f) => {
-      const v = values[f.key];
-      return Array.isArray(v) ? v.length === 0 : !v?.trim();
-    })
-    .map((f) => f.key);
+  return Object.entries(problems(part, values))
+    .filter(([, message]) => message === 'Required')
+    .map(([key]) => key);
 }
 
 export function toApi(part: IntakePart, values: IntakeValues) {
@@ -317,9 +567,42 @@ export function toApi(part: IntakePart, values: IntakeValues) {
   for (const f of part.fields.filter(isInput)) {
     const v = values[f.key];
     const shown = visible(f, values);
-    if (f.kind === 'checks') body[f.key] = shown && Array.isArray(v) ? v : [];
-    else if (!shown || typeof v !== 'string' || !v.trim()) body[f.key] = null;
-    else body[f.key] = f.kind === 'number' ? Number(v) : v.trim();
+    switch (f.kind) {
+      case 'checks':
+        body[f.key] = shown && Array.isArray(v) ? v : [];
+        break;
+      case 'bool':
+        body[f.key] = shown && v === true;
+        break;
+      case 'surgeries':
+        body[f.key] =
+          shown && Array.isArray(v)
+            ? (v as SurgeryEntry[]).map((s) => ({
+                type: s.type,
+                year: s.type !== NONE_SURGERY && s.year ? Number(s.year) : null,
+              }))
+            : [];
+        break;
+      case 'family':
+        body[f.key] =
+          shown && Array.isArray(v)
+            ? (v as FamilyEntry[])
+                .filter((e) => e.conditions.length > 0 || e.who.trim())
+                .map((e) => ({
+                  relative: e.relative,
+                  who: e.who.trim() || null,
+                  conditions: e.conditions,
+                  other: e.conditions.includes('other') ? e.other.trim() || null : null,
+                }))
+            : [];
+        break;
+      case 'date':
+        body[f.key] = shown && typeof v === 'string' && v.trim() ? displayToIso(v.trim()) : null;
+        break;
+      default:
+        if (!shown || typeof v !== 'string' || !v.trim()) body[f.key] = null;
+        else body[f.key] = f.kind === 'number' ? Number(v) : v.trim();
+    }
   }
   return body;
 }
@@ -329,4 +612,18 @@ export function toggleCheck(current: string[], value: string, groupValues: reado
   const none = groupValues.find((v) => v.startsWith('no_'));
   if (value === none) return [...current.filter((v) => !groupValues.includes(v)), value];
   return [...current.filter((v) => v !== none), value];
+}
+
+export function toggleSurgery(current: SurgeryEntry[], type: string) {
+  if (current.some((s) => s.type === type)) return current.filter((s) => s.type !== type);
+  if (type === NONE_SURGERY) return [{ type, year: '' }];
+  return [...current.filter((s) => s.type !== NONE_SURGERY), { type, year: '' }];
+}
+
+export const isNoneSurgery = (type: string) => type === NONE_SURGERY;
+
+export function updateFamily(current: FamilyEntry[], relatives: readonly Option[], next: FamilyEntry) {
+  const order = relatives.map(([v]) => v);
+  const rest = current.filter((e) => e.relative !== next.relative);
+  return [...rest, next].sort((a, b) => order.indexOf(a.relative) - order.indexOf(b.relative));
 }

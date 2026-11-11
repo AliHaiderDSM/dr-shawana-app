@@ -8,17 +8,18 @@ import { ListScreen } from '@/components/ui/list-screen';
 import { StatusBadge } from '@/components/ui/status-badge';
 import { useRefresh } from '@/hooks/use-refresh';
 import { formatDay } from '@/lib/format';
-import { PRESCRIPTION_CATEGORY_LABELS } from '@/lib/labels';
 import { type MedicineItem, type MedicineVisit, useGetMedicinesQuery } from '@/redux/features/intake';
 import { colors, icon, space } from '@/theme/tokens';
 
+const SECTIONS = [
+  { category: 'medicine', title: 'Medicines' },
+  { category: 'supplement', title: 'Supplements' },
+] as const;
+
 function groupItems(items: MedicineItem[]) {
-  const groups = new Map<string, MedicineItem[]>();
-  for (const item of items) {
-    const key = PRESCRIPTION_CATEGORY_LABELS[item.category] ?? 'Other';
-    groups.set(key, [...(groups.get(key) ?? []), item]);
-  }
-  return [...groups.entries()];
+  return SECTIONS.map((s) => [s.title, items.filter((i) => i.category === s.category)] as const).filter(
+    ([, list]) => list.length > 0,
+  );
 }
 
 function VisitCard({ visit }: { visit: MedicineVisit }) {
@@ -41,7 +42,7 @@ function VisitCard({ visit }: { visit: MedicineVisit }) {
       </Pressable>
       {groupItems(visit.items).map(([group, items]) => (
         <View key={group} style={styles.group}>
-          <AppText variant="label" weight="semibold" tone="primary">
+          <AppText variant="subheading" weight="bold" tone="primary" accessibilityRole="header">
             {group}
           </AppText>
           {items.map((item) => (
