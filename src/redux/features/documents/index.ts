@@ -2,7 +2,7 @@ import type { SignedUrl } from '@/types/api';
 import { baseApi, unwrapData } from '../../api/baseApi';
 import { fileUpload } from '../../api/formData';
 import { LIST } from '../../api/tagTypes';
-import type { MedicalDocument, UploadDocumentInput } from './types';
+import type { DocumentScan, MedicalDocument, UploadDocumentInput } from './types';
 
 export const documentsApi = baseApi.injectEndpoints({
   endpoints: (build) => ({
@@ -22,6 +22,11 @@ export const documentsApi = baseApi.injectEndpoints({
       transformResponse: unwrapData<MedicalDocument | null>,
       invalidatesTags: (_result, error) =>
         error ? [] : [{ type: 'Document', id: LIST }, { type: 'MedicalHistory', id: LIST }, 'Overview'],
+    }),
+    scanDocument: build.mutation<DocumentScan, string>({
+      query: (id) => ({ url: `/patient/documents/${encodeURIComponent(id)}/scan`, method: 'POST' }),
+      transformResponse: unwrapData<DocumentScan>,
+      invalidatesTags: (_result, error) => (error ? [] : [{ type: 'MedicalHistory', id: LIST }, 'Overview']),
     }),
     deleteDocument: build.mutation<void, string>({
       query: (id) => ({ url: `/patient/documents/${encodeURIComponent(id)}`, method: 'DELETE' }),
@@ -43,7 +48,8 @@ export const {
   useGetDocumentsQuery,
   useLazyGetDocumentUrlQuery,
   useUploadDocumentMutation,
+  useScanDocumentMutation,
   useDeleteDocumentMutation,
   useDeleteDocumentFileMutation,
 } = documentsApi;
-export type { DocumentFile, DocumentType, MedicalDocument, UploadDocumentInput } from './types';
+export type { DocumentFile, DocumentScan, DocumentType, MedicalDocument, UploadDocumentInput } from './types';

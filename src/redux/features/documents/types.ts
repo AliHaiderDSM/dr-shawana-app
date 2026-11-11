@@ -20,6 +20,14 @@ export interface MedicalDocument {
 
 export type DocumentType = MedicalDocument['type'];
 
+export interface DocumentScan {
+  scanned: boolean;
+  reason: string | null;
+  saved: number;
+  dates: string[];
+  summaryId: string | null;
+}
+
 export interface UploadDocumentInput {
   file: UploadableFile;
   title: string;

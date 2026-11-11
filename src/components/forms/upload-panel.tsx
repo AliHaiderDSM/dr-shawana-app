@@ -9,7 +9,11 @@ import { TextField } from '@/components/ui/text-field';
 import { errorMessage } from '@/lib/errors';
 import { formatSize } from '@/lib/format';
 import { colors, icon, radius, space, touch } from '@/theme/tokens';
-import { type DocumentType, useUploadDocumentMutation } from '@/redux/features/documents';
+import {
+  type DocumentType,
+  useScanDocumentMutation,
+  useUploadDocumentMutation,
+} from '@/redux/features/documents';
 import type { UploadableFile } from '@/types/api';
 import { MAX_UPLOAD_BYTES, pickDocumentFile, pickImageFile, validateFile } from '@/utils/files';
 
@@ -19,6 +23,7 @@ export function UploadPanel() {
   const [title, setTitle] = useState('');
   const [problem, setProblem] = useState<string | null>(null);
   const [upload, { isLoading: busy, error, reset }] = useUploadDocumentMutation();
+  const [scan, { isLoading: scanning }] = useScanDocumentMutation();
   const handle = useRef<{ abort: () => void } | null>(null);
 
   const choose = (picked: UploadableFile) => {
@@ -62,15 +67,30 @@ export function UploadPanel() {
     if (!file || busy) return;
     const request = upload({ file, title: title.trim(), type });
     handle.current = request;
+    let saved;
     try {
-      await request.unwrap();
+      saved = await request.unwrap();
       setFile(null);
       setTitle('');
-      Alert.alert('Report uploaded', 'The clinic can now see it in your medical records.');
     } catch {
       return;
     } finally {
       handle.current = null;
+    }
+    if (!saved || saved.type !== 'medical_record') {
+      Alert.alert('Report uploaded', 'The clinic can now see it in your medical records.');
+      return;
+    }
+    try {
+      const result = await scan(saved.id).unwrap();
+      Alert.alert(
+        'Report uploaded',
+        result.saved > 0
+          ? `${result.saved} test result${result.saved === 1 ? ' was' : 's were'} read from your report and shared with your doctor.`
+          : 'The clinic can now see it in your medical records.',
+      );
+    } catch {
+      Alert.alert('Report uploaded', 'The clinic can now see it in your medical records.');
     }
   };
 
@@ -84,7 +104,14 @@ export function UploadPanel() {
         PDF or photo, up to {formatSize(MAX_UPLOAD_BYTES)}. Your doctor sees it with your records.
       </AppText>
 
-      {!file ? (
+      {scanning ? (
+        <View style={styles.uploading} accessibilityRole="progressbar" accessibilityState={{ busy: true }}>
+          <ActivityIndicator color={colors.primary} />
+          <AppText variant="caption" tone="muted">
+            Reading your report… keep the app open.
+          </AppText>
+        </View>
+      ) : !file ? (
         <View style={styles.pickers}>
           <PickButton label="PDF or file" icon={FileText} onPress={() => pick('medical_record')} />
           <PickButton label="Imaging" icon={ScanLine} onPress={() => pick('imaging')} />
