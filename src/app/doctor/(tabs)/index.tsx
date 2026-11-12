@@ -1,5 +1,12 @@
 import { router } from 'expo-router';
-import { CalendarCheck, CalendarClock, CalendarDays, ChevronRight, Stethoscope } from 'lucide-react-native';
+import {
+  CalendarCheck,
+  CalendarClock,
+  CalendarDays,
+  ChevronRight,
+  Pill,
+  Stethoscope,
+} from 'lucide-react-native';
 import { Pressable, StyleSheet, View } from 'react-native';
 import { ChatRow, ScheduleRow } from '@/components/doctor/parts';
 import { CardSkeleton, EmptyState, ErrorState, SkeletonBlock } from '@/components/feedback/states';
@@ -117,6 +124,12 @@ export default function DoctorHomeScreen() {
           hint="Month calendar of every appointment"
           icon={CalendarDays}
           onPress={() => router.push('/doctor/appointments')}
+        />
+        <Action
+          label="Medicines"
+          hint="Medicines and supplements of a patient"
+          icon={Pill}
+          onPress={() => router.push('/doctor/medicines')}
         />
       </View>
 

@@ -3,6 +3,7 @@ import { baseApi, unwrapData } from '../../api/baseApi';
 import { fileUpload } from '../../api/formData';
 import { LIST } from '../../api/tagTypes';
 import type { ChatPage, ChatMessage, ChatRealtime, PushTokenInput } from '../chat/types';
+import type { MedicineVisit } from '../intake/types';
 import type {
   AppointmentsWhen,
   DoctorAppointmentsPage,
@@ -72,6 +73,11 @@ export const doctorApi = baseApi.injectEndpoints({
     getDoctorPatientFile: build.query<PatientFile, string>({
       query: (patientId) => `/doctor/patients/${encodeURIComponent(patientId)}`,
       transformResponse: unwrapData<PatientFile>,
+      providesTags: (_r, _e, patientId) => [{ type: 'DoctorPatient', id: patientId }],
+    }),
+    getDoctorPatientMedicines: build.query<MedicineVisit[], string>({
+      query: (patientId) => `/doctor/patients/${encodeURIComponent(patientId)}/medicines`,
+      transformResponse: unwrapData<MedicineVisit[]>,
       providesTags: (_r, _e, patientId) => [{ type: 'DoctorPatient', id: patientId }],
     }),
     openDoctorChat: build.mutation<{ conversationId: string }, string>({
@@ -153,6 +159,7 @@ export const {
   useGetDoctorHomeQuery,
   useGetDoctorPatientsQuery,
   useGetDoctorPatientFileQuery,
+  useGetDoctorPatientMedicinesQuery,
   useOpenDoctorChatMutation,
   useLazyGetDoctorRecordUrlQuery,
   useSaveDoctorRemarksMutation,

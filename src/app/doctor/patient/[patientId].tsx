@@ -486,26 +486,44 @@ export default function DoctorPatientFileScreen() {
               ) : null}
             </View>
           ) : null}
-          <Pressable
-            accessibilityRole="button"
-            accessibilityLabel={`Message ${p.name}`}
-            disabled={openState.isLoading}
-            onPress={() =>
-              void openChatWith({ id: p.id, name: p.name, conversationId: f.conversationId }, (id) =>
-                openChat(id).unwrap(),
-              )
-            }
-            style={({ pressed }) => [styles.cta, pressed && styles.ctaPressed]}
-          >
-            {openState.isLoading ? (
-              <ActivityIndicator color={colors.primary} />
-            ) : (
-              <MessageCircle size={icon.md} color={colors.primary} />
-            )}
-            <AppText weight="semibold" tone="primary">
-              Message {p.name.split(' ')[0]}
-            </AppText>
-          </Pressable>
+          <View style={styles.ctaRow}>
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel={`Message ${p.name}`}
+              disabled={openState.isLoading}
+              onPress={() =>
+                void openChatWith({ id: p.id, name: p.name, conversationId: f.conversationId }, (id) =>
+                  openChat(id).unwrap(),
+                )
+              }
+              style={({ pressed }) => [styles.cta, pressed && styles.ctaPressed]}
+            >
+              {openState.isLoading ? (
+                <ActivityIndicator color={colors.primary} />
+              ) : (
+                <MessageCircle size={icon.md} color={colors.primary} />
+              )}
+              <AppText weight="semibold" tone="primary" numberOfLines={1}>
+                Message
+              </AppText>
+            </Pressable>
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel={`Medicines of ${p.name}`}
+              onPress={() =>
+                router.push({
+                  pathname: '/doctor/medicines/[patientId]',
+                  params: { patientId: p.id, name: p.name },
+                })
+              }
+              style={({ pressed }) => [styles.cta, pressed && styles.ctaPressed]}
+            >
+              <Pill size={icon.md} color={colors.primary} />
+              <AppText weight="semibold" tone="primary" numberOfLines={1}>
+                Medicines
+              </AppText>
+            </Pressable>
+          </View>
         </View>
       )}
 
@@ -561,7 +579,9 @@ const styles = StyleSheet.create({
     borderRadius: radius.pill,
     backgroundColor: colors.onPrimarySoft,
   },
+  ctaRow: { flexDirection: 'row', gap: space.sm },
   cta: {
+    flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
