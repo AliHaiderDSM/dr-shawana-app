@@ -15,6 +15,7 @@ interface Base {
 export interface SurgeryEntry {
   type: string;
   year: string;
+  years?: (number | null)[];
 }
 
 export interface FamilyEntry {
@@ -515,9 +516,15 @@ export function toValues(
         break;
       case 'surgeries':
         values[f.key] = Array.isArray(raw)
-          ? (raw as { type?: unknown; year?: unknown }[])
+          ? (raw as { type?: unknown; year?: unknown; years?: unknown }[])
               .filter((s) => typeof s?.type === 'string')
-              .map((s) => ({ type: String(s.type), year: text(s.year) }))
+              .map((s) => ({
+                type: String(s.type),
+                year: text(s.year),
+                ...(Array.isArray(s.years) && s.years.length
+                  ? { years: s.years.map((y) => (typeof y === 'number' ? y : null)) }
+                  : {}),
+              }))
           : [];
         break;
       case 'family':
@@ -577,10 +584,14 @@ export function toApi(part: IntakePart, values: IntakeValues) {
       case 'surgeries':
         body[f.key] =
           shown && Array.isArray(v)
-            ? (v as SurgeryEntry[]).map((s) => ({
-                type: s.type,
-                year: s.type !== NONE_SURGERY && s.year ? Number(s.year) : null,
-              }))
+            ? (v as SurgeryEntry[]).map((s) => {
+                const year = s.type !== NONE_SURGERY && s.year ? Number(s.year) : null;
+                return {
+                  type: s.type,
+                  year,
+                  ...(s.years?.length ? { years: [year, ...s.years.slice(1)] } : {}),
+                };
+              })
             : [];
         break;
       case 'family':
