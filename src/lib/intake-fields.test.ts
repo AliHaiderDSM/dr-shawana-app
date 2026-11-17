@@ -7,6 +7,8 @@ import {
   INTAKE_PARTS,
   missing,
   problems,
+  setSurgeryCount,
+  setSurgeryYear,
   toApi,
   toggleCheck,
   toggleSurgery,
@@ -64,6 +66,23 @@ describe('intake fields', () => {
     expect(toggleSurgery([{ type: 'no_surgery', year: '' }], 'myomectomy')).toEqual([
       { type: 'myomectomy', year: '' },
     ]);
+    const cSection = toggleSurgery([], 'c_section');
+    expect(cSection).toEqual([{ type: 'c_section', year: '', years: [''] }]);
+    const two = setSurgeryYear(setSurgeryCount(cSection, 'c_section', 2), 'c_section', 1, '2019');
+    expect(setSurgeryCount(setSurgeryYear(two, 'c_section', 0, '2015'), 'c_section', 1)).toEqual([
+      { type: 'c_section', year: '2015', years: ['2015'] },
+    ]);
+    expect(setSurgeryCount(two, 'c_section', 50)[0]?.years).toHaveLength(10);
+    const loaded = toValues(history, {
+      surgeries: [{ type: 'c_section', year: 2015, years: [2015, null] }],
+    });
+    expect(loaded.surgeries).toEqual([{ type: 'c_section', year: '2015', years: ['2015', ''] }]);
+    expect(
+      toApi(history, {
+        ...loaded,
+        surgeries: setSurgeryYear(loaded.surgeries as never, 'c_section', 1, '2019'),
+      }).surgeries,
+    ).toEqual([{ type: 'c_section', year: 2015, years: [2015, 2019] }]);
 
     const values = toValues(history, {
       havingPeriods: 'yes',

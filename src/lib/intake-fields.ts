@@ -15,8 +15,11 @@ interface Base {
 export interface SurgeryEntry {
   type: string;
   year: string;
-  years?: (number | null)[];
+  years?: string[];
 }
+
+export const COUNTED_SURGERY = 'c_section';
+export const MAX_SURGERY_COUNT = 10;
 
 export interface FamilyEntry {
   relative: string;
@@ -522,7 +525,7 @@ export function toValues(
                 type: String(s.type),
                 year: text(s.year),
                 ...(Array.isArray(s.years) && s.years.length
-                  ? { years: s.years.map((y) => (typeof y === 'number' ? y : null)) }
+                  ? { years: s.years.map((y) => (typeof y === 'number' ? String(y) : '')) }
                   : {}),
               }))
           : [];
@@ -556,7 +559,9 @@ export function problems(part: IntakePart, values: IntakeValues) {
     else if (f.kind === 'date' && typeof v === 'string' && v.trim() && !displayToIso(v.trim()))
       result[f.key] = 'Use day-month-year, e.g. 05-10-2026';
     else if (f.kind === 'surgeries' && Array.isArray(v)) {
-      const bad = (v as SurgeryEntry[]).find((s) => s.year && !/^(19|20)\d{2}$/.test(s.year));
+      const bad = (v as SurgeryEntry[]).find((s) =>
+        [s.year, ...(s.years ?? [])].some((y) => y && !/^(19|20)\d{2}$/.test(y)),
+      );
       if (bad) result[f.key] = 'Write the year with 4 digits, e.g. 2015';
     }
   }
@@ -585,12 +590,11 @@ export function toApi(part: IntakePart, values: IntakeValues) {
         body[f.key] =
           shown && Array.isArray(v)
             ? (v as SurgeryEntry[]).map((s) => {
-                const year = s.type !== NONE_SURGERY && s.year ? Number(s.year) : null;
-                return {
-                  type: s.type,
-                  year,
-                  ...(s.years?.length ? { years: [year, ...s.years.slice(1)] } : {}),
-                };
+                if (s.type !== NONE_SURGERY && s.years?.length) {
+                  const years = s.years.map((y) => (y ? Number(y) : null));
+                  return { type: s.type, year: years[0] ?? null, years };
+                }
+                return { type: s.type, year: s.type !== NONE_SURGERY && s.year ? Number(s.year) : null };
               })
             : [];
         break;
@@ -628,7 +632,27 @@ export function toggleCheck(current: string[], value: string, groupValues: reado
 export function toggleSurgery(current: SurgeryEntry[], type: string) {
   if (current.some((s) => s.type === type)) return current.filter((s) => s.type !== type);
   if (type === NONE_SURGERY) return [{ type, year: '' }];
-  return [...current.filter((s) => s.type !== NONE_SURGERY), { type, year: '' }];
+  const entry = type === COUNTED_SURGERY ? { type, year: '', years: [''] } : { type, year: '' };
+  return [...current.filter((s) => s.type !== NONE_SURGERY), entry];
+}
+
+const yearsOf = (entry: SurgeryEntry) => (entry.years?.length ? entry.years : [entry.year]);
+
+export function setSurgeryCount(current: SurgeryEntry[], type: string, count: number) {
+  const size = Math.min(MAX_SURGERY_COUNT, Math.max(1, count));
+  return current.map((s) => {
+    if (s.type !== type) return s;
+    const years = Array.from({ length: size }, (_, i) => yearsOf(s)[i] ?? '');
+    return { ...s, years, year: years[0] ?? '' };
+  });
+}
+
+export function setSurgeryYear(current: SurgeryEntry[], type: string, index: number, year: string) {
+  return current.map((s) => {
+    if (s.type !== type) return s;
+    const years = yearsOf(s).map((y, i) => (i === index ? year.replace(/\D/g, '') : y));
+    return { ...s, years, year: years[0] ?? '' };
+  });
 }
 
 export const isNoneSurgery = (type: string) => type === NONE_SURGERY;

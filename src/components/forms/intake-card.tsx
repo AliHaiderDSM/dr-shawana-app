@@ -1,4 +1,4 @@
-import { Check, ChevronDown, ChevronUp, Save } from 'lucide-react-native';
+import { Check, ChevronDown, ChevronUp, Minus, Plus, Save } from 'lucide-react-native';
 import { useState } from 'react';
 import { Alert, Pressable, StyleSheet, View } from 'react-native';
 import { AppText } from '@/components/ui/app-text';
@@ -9,6 +9,7 @@ import { TextField } from '@/components/ui/text-field';
 import { errorMessage, fieldErrors } from '@/lib/errors';
 import {
   bmiOf,
+  COUNTED_SURGERY,
   dateInput,
   type FamilyEntry,
   feetInput,
@@ -16,8 +17,11 @@ import {
   type IntakePart,
   type IntakeValues,
   isNoneSurgery,
+  MAX_SURGERY_COUNT,
   numberInput,
   problems,
+  setSurgeryCount,
+  setSurgeryYear,
   type SurgeryEntry,
   toApi,
   toggleCheck,
@@ -27,7 +31,7 @@ import {
   visible,
 } from '@/lib/intake-fields';
 import { useSaveIntakeMutation } from '@/redux/features/intake';
-import { colors, icon, radius, space } from '@/theme/tokens';
+import { colors, icon, radius, space, touch } from '@/theme/tokens';
 
 function CheckRow({
   label,
@@ -67,6 +71,61 @@ function ErrorText({ error }: { error?: string }) {
   ) : null;
 }
 
+const ORDINALS = ['1st', '2nd', '3rd'];
+const ordinal = (n: number) => ORDINALS[n - 1] ?? `${n}th`;
+
+function CountStepper({
+  label,
+  value,
+  disabled,
+  onChange,
+}: {
+  label: string;
+  value: number;
+  disabled: boolean;
+  onChange: (next: number) => void;
+}) {
+  const step = (by: number) => onChange(Math.min(MAX_SURGERY_COUNT, Math.max(1, value + by)));
+  return (
+    <View style={styles.stepper}>
+      <AppText variant="label" style={styles.flex}>
+        {label}
+      </AppText>
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel={`Fewer, now ${value}`}
+        disabled={disabled || value <= 1}
+        onPress={() => step(-1)}
+        style={({ pressed }) => [
+          styles.stepButton,
+          (disabled || value <= 1) && styles.stepOff,
+          pressed && styles.stepPressed,
+        ]}
+        hitSlop={6}
+      >
+        <Minus size={icon.sm} color={colors.primary} />
+      </Pressable>
+      <AppText variant="label" style={styles.stepValue} accessibilityLiveRegion="polite">
+        {value}
+      </AppText>
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel={`More, now ${value}`}
+        disabled={disabled || value >= MAX_SURGERY_COUNT}
+        onPress={() => step(1)}
+        style={({ pressed }) => [
+          styles.stepButton,
+          (disabled || value >= MAX_SURGERY_COUNT) && styles.stepOff,
+          pressed && styles.stepPressed,
+        ]}
+        hitSlop={6}
+      >
+        <Plus size={icon.sm} color={colors.primary} />
+      </Pressable>
+    </View>
+  );
+}
+
 function SurgeriesInput({
   field,
   value,
@@ -93,7 +152,28 @@ function SurgeriesInput({
               disabled={disabled}
               onPress={() => onChange(toggleSurgery(value, type))}
             />
-            {entry && !isNoneSurgery(type) ? (
+            {entry && type === COUNTED_SURGERY ? (
+              <View style={styles.counted}>
+                <CountStepper
+                  label={`How many ${label}s?`}
+                  value={entry.years?.length || 1}
+                  disabled={disabled}
+                  onChange={(count) => onChange(setSurgeryCount(value, type, count))}
+                />
+                {(entry.years?.length ? entry.years : [entry.year]).map((year, index, all) => (
+                  <TextField
+                    key={index}
+                    label={all.length > 1 ? `${ordinal(index + 1)} ${label}: year` : `${label}: year`}
+                    value={year}
+                    keyboardType="number-pad"
+                    maxLength={4}
+                    editable={!disabled}
+                    placeholder="e.g. 2015"
+                    onChangeText={(next) => onChange(setSurgeryYear(value, type, index, next))}
+                  />
+                ))}
+              </View>
+            ) : entry && !isNoneSurgery(type) ? (
               <TextField
                 label={`${label}: year`}
                 value={entry.year}
@@ -482,5 +562,25 @@ const styles = StyleSheet.create({
     gap: space.sm,
   },
   familyOn: { borderColor: colors.primary },
+  counted: {
+    gap: space.sm,
+    padding: space.md,
+    borderRadius: radius.md,
+    backgroundColor: colors.surfaceMuted,
+  },
+  stepper: { flexDirection: 'row', alignItems: 'center', gap: space.sm },
+  stepButton: {
+    width: touch.iconButton,
+    height: touch.iconButton,
+    borderRadius: radius.md,
+    borderWidth: 1,
+    borderColor: colors.primary,
+    backgroundColor: colors.surface,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  stepPressed: { backgroundColor: colors.primarySoft },
+  stepOff: { opacity: 0.4 },
+  stepValue: { minWidth: 28, textAlign: 'center' },
   familyHead: { flexDirection: 'row', alignItems: 'center', gap: space.sm },
 });
