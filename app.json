@@ -32,7 +32,8 @@
       ],
       "blockedPermissions": [
         "android.permission.SYSTEM_ALERT_WINDOW",
-        "android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK"
+        "android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK",
+        "com.google.android.gms.permission.AD_ID"
       ]
     },
     "plugins": [
