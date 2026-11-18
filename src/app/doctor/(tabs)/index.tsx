@@ -94,7 +94,7 @@ export default function DoctorHomeScreen() {
             <View style={styles.chip}>
               <Stethoscope size={icon.sm} color={colors.textInverse} />
               <AppText variant="caption" weight="semibold" style={styles.heroText} numberOfLines={1}>
-                {h ? `${h.doctor.details ?? 'Doctor'} · ${h.doctor.branch}` : 'DSM Clinic'}
+                {h ? `${h.doctor.details ?? 'Doctor'} · ${h.doctor.branch}` : 'DSM Nexus'}
               </AppText>
             </View>
           </View>

@@ -98,7 +98,7 @@ export default function HomeScreen() {
             <View style={styles.brandRow}>
               <ShieldCheck size={icon.sm} color={colors.textInverseMuted} />
               <AppText variant="caption" style={styles.heroMuted}>
-                DSM Clinic · Your health, in one place
+                DSM Nexus · Your health, in one place
               </AppText>
             </View>
           </View>
@@ -197,7 +197,7 @@ export default function HomeScreen() {
           {isNew ? (
             <EmptyState
               icon={Sparkles}
-              title="Welcome to DSM Clinic"
+              title="Welcome to DSM Nexus"
               message="Your visits, prescriptions and reports will appear here after your first appointment."
             />
           ) : null}

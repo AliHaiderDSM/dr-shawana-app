@@ -137,7 +137,7 @@ export default function ProfileScreen() {
                     category: 'other',
                     subject: 'Delete my account',
                     message:
-                      'Please delete my DSM Clinic app account and the personal data the clinic is not required to keep.',
+                      'Please delete my DSM Nexus app account and the personal data the clinic is not required to keep.',
                   },
                 })
               }

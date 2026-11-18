@@ -22,8 +22,8 @@ async function microphoneAllowed() {
   Alert.alert(
     'Allow the microphone',
     asked.canAskAgain
-      ? 'DSM Clinic needs the microphone to record a voice message. Tap the mic again and choose Allow.'
-      : 'The microphone is turned off for DSM Clinic. Open Settings, tap Permissions and allow the Microphone.',
+      ? 'DSM Nexus needs the microphone to record a voice message. Tap the mic again and choose Allow.'
+      : 'The microphone is turned off for DSM Nexus. Open Settings, tap Permissions and allow the Microphone.',
     asked.canAskAgain
       ? [{ text: 'OK' }]
       : [
