@@ -107,10 +107,33 @@ export interface PatientFilePrescription {
   }[];
 }
 
+export interface PlanOption {
+  id: string;
+  category: string;
+  groupName: string;
+  name: string;
+  dose: string | null;
+}
+
+export interface PlanOptions {
+  medicines: PlanOption[];
+  bloodWork: PlanOption[];
+}
+
+export interface PlanItem {
+  catalogItemId: string;
+  kind: 'medicine' | 'blood_work';
+  category: string;
+  groupName: string;
+  name: string;
+  dose: string | null;
+}
+
 export interface PatientFilePlan {
   id: string;
   date: string;
-  plan: string;
+  plan: string | null;
+  items?: PlanItem[];
   doctor: string | null;
   branch?: string | null;
   createdAt: string | null;

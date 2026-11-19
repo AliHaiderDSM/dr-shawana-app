@@ -56,6 +56,8 @@ export function RichTextEditor({
   saveLabel,
   saving,
   onSave,
+  extraChanged = false,
+  children,
 }: {
   initialHtml: string | null;
   header: ReactNode;
@@ -64,6 +66,8 @@ export function RichTextEditor({
   saveLabel: string;
   saving: boolean;
   onSave: (html: string | null) => void;
+  extraChanged?: boolean;
+  children?: ReactNode;
 }) {
   const initial = htmlToMarkup(initialHtml);
   const [text, setText] = useState(initial);
@@ -84,7 +88,7 @@ export function RichTextEditor({
           label={saveLabel}
           icon={Save}
           loading={saving}
-          disabled={!changed}
+          disabled={!changed && !extraChanged}
           onPress={() => onSave(markupToHtml(text))}
         />
       }
@@ -147,6 +151,7 @@ export function RichTextEditor({
       <AppText variant="caption" tone="muted">
         Select words and tap B or I. Lists start each line with a bullet or a number.
       </AppText>
+      {children}
     </Screen>
   );
 }

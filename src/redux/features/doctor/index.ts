@@ -11,9 +11,15 @@ import type {
   DoctorPatient,
   DoctorProfile,
   PatientFile,
+  PlanOptions,
   SendDoctorMessageInput,
   UpdateDoctorProfileInput,
 } from './types';
+
+interface TreatmentPlanBody {
+  plan: string | null;
+  catalogItemIds: string[];
+}
 
 const threadPath = (conversationId: string) => `/branch/chats/${encodeURIComponent(conversationId)}`;
 
@@ -117,20 +123,28 @@ export const doctorApi = baseApi.injectEndpoints({
       invalidatesTags: (_r, error, { patientId }) =>
         error ? [] : [{ type: 'DoctorPatient', id: patientId }],
     }),
-    addDoctorTreatmentPlan: build.mutation<void, { patientId: string; plan: string }>({
-      query: ({ patientId, plan }) => ({
+    addDoctorTreatmentPlan: build.mutation<void, { patientId: string } & TreatmentPlanBody>({
+      query: ({ patientId, ...body }) => ({
         url: `/doctor/patients/${encodeURIComponent(patientId)}/plans`,
         method: 'POST',
-        body: { plan },
+        body,
       }),
       invalidatesTags: (_r, error, { patientId }) =>
         error ? [] : [{ type: 'DoctorPatient', id: patientId }],
     }),
-    updateDoctorTreatmentPlan: build.mutation<void, { planId: string; patientId: string; plan: string }>({
-      query: ({ planId, plan }) => ({
+    getDoctorPlanOptions: build.query<PlanOptions, void>({
+      query: () => '/doctor/plan-options',
+      transformResponse: unwrapData<PlanOptions>,
+      keepUnusedDataFor: 600,
+    }),
+    updateDoctorTreatmentPlan: build.mutation<
+      void,
+      { planId: string; patientId: string } & TreatmentPlanBody
+    >({
+      query: ({ planId, plan, catalogItemIds }) => ({
         url: `/doctor/plans/${encodeURIComponent(planId)}`,
         method: 'PUT',
-        body: { plan },
+        body: { plan, catalogItemIds },
       }),
       invalidatesTags: (_r, error, { patientId }) =>
         error ? [] : [{ type: 'DoctorPatient', id: patientId }],
@@ -196,6 +210,7 @@ export const {
   useSaveDoctorPlanMutation,
   useAddDoctorTreatmentPlanMutation,
   useUpdateDoctorTreatmentPlanMutation,
+  useGetDoctorPlanOptionsQuery,
   useGetDoctorProfileQuery,
   useGetDoctorAppointmentsQuery,
   useGetDoctorMonthQuery,

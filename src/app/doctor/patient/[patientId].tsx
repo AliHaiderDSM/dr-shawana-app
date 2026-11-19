@@ -8,7 +8,6 @@ import {
   ClipboardList,
   FileImage,
   FileText,
-  FlaskConical,
   FolderHeart,
   MessageCircle,
   NotebookPen,
@@ -21,7 +20,6 @@ import {
 } from 'lucide-react-native';
 import { useState, type ReactNode } from 'react';
 import { ActivityIndicator, Alert, Pressable, ScrollView, StyleSheet, View } from 'react-native';
-import { BloodWorkView } from '@/components/doctor/blood-work';
 import { openChatWith } from '@/components/doctor/open-chat';
 import { Initials } from '@/components/doctor/parts';
 import { CardSkeleton, EmptyState, ErrorState } from '@/components/feedback/states';
@@ -38,7 +36,7 @@ import { groupRecords } from '@/lib/record-groups';
 import { htmlToMarkup } from '@/lib/rich-text';
 import { colors, icon, radius, shadow, space, touch } from '@/theme/tokens';
 import {
-  type BloodWork,
+  type PlanItem,
   type PatientFile,
   useGetDoctorPatientFileQuery,
   useLazyGetDoctorRecordUrlQuery,
@@ -66,18 +64,50 @@ const openTreatmentPlan = (planId: string, patientId: string) =>
 type PlanEntry = {
   key: string;
   date: string;
-  html: string;
+  html: string | null;
+  items: PlanItem[];
   doctor: string | null;
   branch?: string | null;
   title: string;
   edit: (() => void) | null;
 };
 
+function PlanItems({ items }: { items: PlanItem[] }) {
+  const lists = [
+    { title: 'Medicines', items: items.filter((i) => i.kind === 'medicine') },
+    { title: 'Blood work', items: items.filter((i) => i.kind === 'blood_work') },
+  ].filter((list) => list.items.length > 0);
+  if (!lists.length) return null;
+  return (
+    <View style={styles.planLists}>
+      {lists.map((list) => (
+        <View key={list.title} style={styles.gap}>
+          <AppText variant="caption" weight="bold" tone="primary" style={styles.upper}>
+            {list.title}
+          </AppText>
+          {list.items.map((item) => (
+            <View key={item.catalogItemId} style={styles.planItem}>
+              <View style={styles.dotSmall} />
+              <AppText variant="label" style={styles.flex}>
+                <AppText variant="label" weight="semibold">
+                  {item.name}
+                </AppText>
+                {item.dose ? ` — ${item.dose}` : ''}
+              </AppText>
+            </View>
+          ))}
+        </View>
+      ))}
+    </View>
+  );
+}
+
 function planEntries(file: PatientFile): PlanEntry[] {
   const own = (file.plans ?? []).map((t) => ({
     key: `plan-${t.id}`,
     date: t.date,
     html: t.plan,
+    items: t.items ?? [],
     doctor: t.doctor,
     branch: t.branch,
     title: 'Plan of treatment',
@@ -88,7 +118,8 @@ function planEntries(file: PatientFile): PlanEntry[] {
     .map((p) => ({
       key: `rx-${p.id}`,
       date: p.date,
-      html: p.planTreatment ?? '',
+      html: p.planTreatment,
+      items: [],
       doctor: p.doctor,
       branch: p.branch,
       title: `Prescription #${p.prescriptionNo}`,
@@ -328,7 +359,8 @@ function PlanOfTreatment({ file }: { file: PatientFile }) {
               ) : null}
             </View>
             <Source verb="Planned by" doctor={entry.doctor} branch={entry.branch} />
-            <RichTextView html={entry.html} />
+            {entry.html && hasPlan(entry.html) ? <RichTextView html={entry.html} /> : null}
+            <PlanItems items={entry.items} />
           </Entry>
         ))
       ) : (
@@ -486,23 +518,10 @@ function Visits({ file }: { file: PatientFile }) {
   );
 }
 
-const NO_BLOOD_WORK: BloodWork = { dates: [], tests: [] };
-
 function Records({ file }: { file: PatientFile }) {
-  const blood = file.bloodWork ?? NO_BLOOD_WORK;
   const fileCount = file.records.reduce((sum, r) => sum + r.files.length, 0);
   return (
     <View style={styles.records}>
-      <View style={styles.sectionHead}>
-        <FlaskConical size={icon.md} color={colors.primary} />
-        <AppText weight="semibold" style={styles.flex}>
-          Blood work
-        </AppText>
-        <AppText variant="caption" tone="muted">
-          {blood.dates.length} test date{blood.dates.length === 1 ? '' : 's'}
-        </AppText>
-      </View>
-      <BloodWorkView data={blood} />
       <View style={styles.sectionHead}>
         <FileText size={icon.md} color={colors.primary} />
         <AppText weight="semibold" style={styles.flex}>
@@ -659,6 +678,10 @@ export default function DoctorPatientFileScreen() {
 const styles = StyleSheet.create({
   flex: { flex: 1, minWidth: 0 },
   gap: { gap: space.xs },
+  upper: { textTransform: 'uppercase', letterSpacing: 0.6 },
+  planLists: { gap: space.sm, marginTop: space.xs },
+  planItem: { flexDirection: 'row', alignItems: 'center', gap: space.sm },
+  dotSmall: { width: 6, height: 6, borderRadius: radius.pill, backgroundColor: colors.primary },
   between: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: space.sm },
   hero: { padding: space.lg, gap: space.md, borderRadius: radius.lg, backgroundColor: colors.primary },
   heroTop: { flexDirection: 'row', alignItems: 'center', gap: space.md },
