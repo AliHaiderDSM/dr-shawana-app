@@ -14,6 +14,7 @@ export const TAG_TYPES = [
   'DoctorProfile',
   'Intake',
   'Medicines',
+  'TreatmentPlan',
 ] as const;
 
 export type TagType = (typeof TAG_TYPES)[number];

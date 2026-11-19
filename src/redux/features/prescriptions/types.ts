@@ -9,6 +9,16 @@ export interface PrescriptionSummary {
   appointmentId: string | null;
 }
 
+export interface TreatmentPlan {
+  id: string;
+  date: string;
+  plan: string | null;
+  doctor: string | null;
+  branch: string | null;
+  medicines: { name: string; dose: string | null; groupName: string }[];
+  bloodWork: { name: string; groupName: string }[];
+}
+
 export interface PrescriptionItem {
   id: string;
   category: string;

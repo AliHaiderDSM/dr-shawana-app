@@ -1,6 +1,6 @@
 import { baseApi, unwrapData } from '../../api/baseApi';
 import { LIST } from '../../api/tagTypes';
-import type { PrescriptionDetail, PrescriptionSummary } from './types';
+import type { PrescriptionDetail, PrescriptionSummary, TreatmentPlan } from './types';
 
 export const prescriptionsApi = baseApi.injectEndpoints({
   endpoints: (build) => ({
@@ -17,8 +17,14 @@ export const prescriptionsApi = baseApi.injectEndpoints({
       transformResponse: unwrapData<PrescriptionDetail>,
       providesTags: (_result, _error, id) => [{ type: 'Prescription', id }],
     }),
+    getTreatmentPlans: build.query<TreatmentPlan[], void>({
+      query: () => '/patient/treatment-plans',
+      transformResponse: unwrapData<TreatmentPlan[]>,
+      providesTags: [{ type: 'TreatmentPlan', id: LIST }],
+    }),
   }),
 });
 
-export const { useGetPrescriptionsQuery, useGetPrescriptionQuery } = prescriptionsApi;
-export type { PrescriptionDetail, PrescriptionItem, PrescriptionSummary } from './types';
+export const { useGetPrescriptionsQuery, useGetPrescriptionQuery, useGetTreatmentPlansQuery } =
+  prescriptionsApi;
+export type { PrescriptionDetail, PrescriptionItem, PrescriptionSummary, TreatmentPlan } from './types';
