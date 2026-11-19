@@ -48,6 +48,7 @@ export function PlanItemPicker({
   selected,
   loading,
   onToggle,
+  defaultOpen = false,
 }: {
   title: string;
   addLabel: string;
@@ -55,8 +56,9 @@ export function PlanItemPicker({
   selected: string[];
   loading: boolean;
   onToggle: (id: string) => void;
+  defaultOpen?: boolean;
 }) {
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useState(defaultOpen);
   const [search, setSearch] = useState('');
   const groups = useMemo(() => groupOptions(options, search), [options, search]);
   const chosen = options.filter((o) => selected.includes(o.id));

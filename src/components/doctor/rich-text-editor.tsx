@@ -57,6 +57,7 @@ export function RichTextEditor({
   saving,
   onSave,
   extraChanged = false,
+  autoFocus = true,
   children,
 }: {
   initialHtml: string | null;
@@ -67,6 +68,7 @@ export function RichTextEditor({
   saving: boolean;
   onSave: (html: string | null) => void;
   extraChanged?: boolean;
+  autoFocus?: boolean;
   children?: ReactNode;
 }) {
   const initial = htmlToMarkup(initialHtml);
@@ -138,7 +140,7 @@ export function RichTextEditor({
           selection={selection}
           onSelectionChange={(e) => setSelection(e.nativeEvent.selection)}
           multiline
-          autoFocus
+          autoFocus={autoFocus}
           maxLength={50000}
           placeholder={placeholder}
           placeholderTextColor={colors.textMuted}

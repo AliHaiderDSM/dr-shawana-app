@@ -61,8 +61,13 @@ const openPlan = (prescriptionId: string, patientId: string) =>
 
 const hasPlan = (html: string | null) => Boolean(htmlToMarkup(html).trim());
 
-const openTreatmentPlan = (planId: string, patientId: string) =>
-  router.push({ pathname: '/doctor/treatment-plan/[planId]', params: { planId, patientId } });
+type PlanFocus = 'medicines' | 'blood_work';
+
+const openTreatmentPlan = (planId: string, patientId: string, focus?: PlanFocus) =>
+  router.push({
+    pathname: '/doctor/treatment-plan/[planId]',
+    params: focus ? { planId, patientId, focus } : { planId, patientId },
+  });
 
 type PlanEntry = {
   key: string;
@@ -233,7 +238,9 @@ function Prescriptions({ file }: { file: PatientFile }) {
               style={styles.gap}
             >
               <View style={styles.between}>
-                <AppText weight="semibold">Prescription #{p.prescriptionNo}</AppText>
+                <AppText weight="semibold" tone="primary">
+                  Prescription #{p.prescriptionNo}
+                </AppText>
                 <View style={styles.toggle}>
                   <AppText variant="caption" tone="primary" weight="semibold">
                     {expanded ? 'Hide' : `${p.items.length} items`}
@@ -342,11 +349,37 @@ function PlanOfTreatment({ file }: { file: PatientFile }) {
           </AppText>
         </Pressable>
       </View>
+      <View style={styles.quickRow}>
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel="Add medicines to a new plan"
+          onPress={() => openTreatmentPlan('new', file.patient.id, 'medicines')}
+          style={({ pressed }) => [styles.quick, pressed && styles.quickPressed]}
+        >
+          <Plus size={icon.sm} color={colors.primary} />
+          <Pill size={icon.sm} color={colors.primary} />
+          <AppText variant="label" weight="semibold" tone="primary">
+            Medicines
+          </AppText>
+        </Pressable>
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel="Add blood tests to a new plan"
+          onPress={() => openTreatmentPlan('new', file.patient.id, 'blood_work')}
+          style={({ pressed }) => [styles.quick, pressed && styles.quickPressed]}
+        >
+          <Plus size={icon.sm} color={colors.primary} />
+          <FlaskConical size={icon.sm} color={colors.primary} />
+          <AppText variant="label" weight="semibold" tone="primary">
+            Blood work
+          </AppText>
+        </Pressable>
+      </View>
       {entries.length ? (
         entries.map((entry, index) => (
           <Entry key={entry.key} date={entry.date} last={index === entries.length - 1}>
             <View style={styles.between}>
-              <AppText weight="semibold" style={styles.flex}>
+              <AppText weight="semibold" tone="primary" style={styles.flex}>
                 {entry.title}
               </AppText>
               {entry.edit ? (
@@ -807,6 +840,20 @@ const styles = StyleSheet.create({
     backgroundColor: colors.primary,
   },
   addPressed: { backgroundColor: colors.primaryPressed },
+  quickRow: { flexDirection: 'row', gap: space.sm },
+  quick: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: space.xs,
+    minHeight: touch.minHeight,
+    borderRadius: radius.md,
+    borderWidth: 1,
+    borderColor: colors.primary,
+    backgroundColor: colors.primarySoft,
+  },
+  quickPressed: { opacity: 0.8 },
   sectionHead: { flexDirection: 'row', alignItems: 'center', gap: space.sm },
   branchRow: { flexDirection: 'row', alignItems: 'center', gap: space.xs },
   source: { gap: space.xxs },

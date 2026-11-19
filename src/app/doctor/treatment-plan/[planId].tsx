@@ -25,11 +25,13 @@ function PlanEditor({
   patientId,
   patientName,
   existing,
+  focus,
 }: {
   planId: string;
   patientId: string;
   patientName: string;
   existing: PatientFilePlan | undefined;
+  focus: string | undefined;
 }) {
   const creating = !existing;
   const initialIds = (existing?.items ?? []).map((i) => i.catalogItemId);
@@ -63,6 +65,7 @@ function PlanEditor({
       saveLabel={creating ? 'Add plan' : 'Save plan'}
       saving={adding.isLoading || updating.isLoading}
       extraChanged={!sameIds(ids, initialIds)}
+      autoFocus={!focus}
       onSave={(html) => void submit(html)}
       header={
         <>
@@ -81,6 +84,7 @@ function PlanEditor({
         selected={ids}
         loading={options.isLoading}
         onToggle={toggle}
+        defaultOpen={focus === 'medicines'}
       />
       <PlanItemPicker
         title="Blood work"
@@ -89,13 +93,18 @@ function PlanEditor({
         selected={ids}
         loading={options.isLoading}
         onToggle={toggle}
+        defaultOpen={focus === 'blood_work'}
       />
     </RichTextEditor>
   );
 }
 
 export default function DoctorTreatmentPlanScreen() {
-  const { planId = NEW_PLAN, patientId = '' } = useLocalSearchParams<{ planId: string; patientId: string }>();
+  const {
+    planId = NEW_PLAN,
+    patientId = '',
+    focus,
+  } = useLocalSearchParams<{ planId: string; patientId: string; focus?: string }>();
   const creating = planId === NEW_PLAN;
   const file = useGetDoctorPatientFileQuery(patientId, { skip: !patientId });
   const existing = file.data?.plans?.find((p) => p.id === planId);
@@ -124,6 +133,7 @@ export default function DoctorTreatmentPlanScreen() {
       patientId={patientId}
       patientName={file.data.patient.name}
       existing={creating ? undefined : existing}
+      focus={focus}
     />
   );
 }
