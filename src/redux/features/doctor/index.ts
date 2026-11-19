@@ -117,6 +117,24 @@ export const doctorApi = baseApi.injectEndpoints({
       invalidatesTags: (_r, error, { patientId }) =>
         error ? [] : [{ type: 'DoctorPatient', id: patientId }],
     }),
+    addDoctorTreatmentPlan: build.mutation<void, { patientId: string; plan: string }>({
+      query: ({ patientId, plan }) => ({
+        url: `/doctor/patients/${encodeURIComponent(patientId)}/plans`,
+        method: 'POST',
+        body: { plan },
+      }),
+      invalidatesTags: (_r, error, { patientId }) =>
+        error ? [] : [{ type: 'DoctorPatient', id: patientId }],
+    }),
+    updateDoctorTreatmentPlan: build.mutation<void, { planId: string; patientId: string; plan: string }>({
+      query: ({ planId, plan }) => ({
+        url: `/doctor/plans/${encodeURIComponent(planId)}`,
+        method: 'PUT',
+        body: { plan },
+      }),
+      invalidatesTags: (_r, error, { patientId }) =>
+        error ? [] : [{ type: 'DoctorPatient', id: patientId }],
+    }),
     saveDoctorPushToken: build.mutation<void, PushTokenInput>({
       query: (body) => ({ url: '/doctor/push-token', method: 'POST', body }),
     }),
@@ -176,6 +194,8 @@ export const {
   useLazyGetDoctorRecordUrlQuery,
   useSaveDoctorRemarksMutation,
   useSaveDoctorPlanMutation,
+  useAddDoctorTreatmentPlanMutation,
+  useUpdateDoctorTreatmentPlanMutation,
   useGetDoctorProfileQuery,
   useGetDoctorAppointmentsQuery,
   useGetDoctorMonthQuery,

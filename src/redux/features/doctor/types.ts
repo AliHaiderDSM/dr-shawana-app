@@ -98,7 +98,23 @@ export interface PatientFilePrescription {
   doctor: string | null;
   branch?: string | null;
   editable?: boolean;
-  items: { groupName: string; name: string; dose: string | null; instructions: string | null }[];
+  items: {
+    category: string;
+    groupName: string;
+    name: string;
+    dose: string | null;
+    instructions: string | null;
+  }[];
+}
+
+export interface PatientFilePlan {
+  id: string;
+  date: string;
+  plan: string;
+  doctor: string | null;
+  branch?: string | null;
+  createdAt: string | null;
+  editable: boolean;
 }
 
 export interface PatientFileRemark {
@@ -140,6 +156,7 @@ export interface PatientFile {
   appointments: PatientFileAppointment[];
   prescriptions: PatientFilePrescription[];
   remarks: PatientFileRemark[];
+  plans?: PatientFilePlan[];
   records: PatientFileRecord[];
   bloodWork?: BloodWork;
 }

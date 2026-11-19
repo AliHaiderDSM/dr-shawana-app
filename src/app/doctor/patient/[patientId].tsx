@@ -25,6 +25,7 @@ import { BloodWorkView } from '@/components/doctor/blood-work';
 import { openChatWith } from '@/components/doctor/open-chat';
 import { Initials } from '@/components/doctor/parts';
 import { CardSkeleton, EmptyState, ErrorState } from '@/components/feedback/states';
+import { PrescriptionHeading, PrescriptionSections } from '@/components/prescription-sections';
 import { AppText } from '@/components/ui/app-text';
 import { Button } from '@/components/ui/button';
 import { RichTextView } from '@/components/ui/rich-text-view';
@@ -59,13 +60,41 @@ const openPlan = (prescriptionId: string, patientId: string) =>
 
 const hasPlan = (html: string | null) => Boolean(htmlToMarkup(html).trim());
 
-function groupByName<T extends { groupName: string | null }>(items: T[]) {
-  const groups = new Map<string, T[]>();
-  for (const item of items) {
-    const name = item.groupName?.trim() || 'Other';
-    groups.set(name, [...(groups.get(name) ?? []), item]);
-  }
-  return [...groups];
+const openTreatmentPlan = (planId: string, patientId: string) =>
+  router.push({ pathname: '/doctor/treatment-plan/[planId]', params: { planId, patientId } });
+
+type PlanEntry = {
+  key: string;
+  date: string;
+  html: string;
+  doctor: string | null;
+  branch?: string | null;
+  title: string;
+  edit: (() => void) | null;
+};
+
+function planEntries(file: PatientFile): PlanEntry[] {
+  const own = (file.plans ?? []).map((t) => ({
+    key: `plan-${t.id}`,
+    date: t.date,
+    html: t.plan,
+    doctor: t.doctor,
+    branch: t.branch,
+    title: 'Plan of treatment',
+    edit: t.editable ? () => openTreatmentPlan(t.id, file.patient.id) : null,
+  }));
+  const fromPrescriptions = file.prescriptions
+    .filter((p) => hasPlan(p.planTreatment))
+    .map((p) => ({
+      key: `rx-${p.id}`,
+      date: p.date,
+      html: p.planTreatment ?? '',
+      doctor: p.doctor,
+      branch: p.branch,
+      title: `Prescription #${p.prescriptionNo}`,
+      edit: p.editable ? () => openPlan(p.id, file.patient.id) : null,
+    }));
+  return [...own, ...fromPrescriptions].sort((a, b) => b.date.localeCompare(a.date));
 }
 
 function Segment<T extends string>({
@@ -182,7 +211,14 @@ function Prescriptions({ file }: { file: PatientFile }) {
                   )}
                 </View>
               </View>
-              <AppText variant="label">{p.diagnosis}</AppText>
+              {!expanded && p.diagnosis?.trim() ? (
+                <AppText variant="label" numberOfLines={2}>
+                  <AppText variant="label" weight="semibold">
+                    Diagnosis:{' '}
+                  </AppText>
+                  {p.diagnosis.trim()}
+                </AppText>
+              ) : null}
               <Source verb="Prescribed by" doctor={p.doctor} branch={p.branch} />
               {p.followupDate ? (
                 <AppText variant="caption" tone="muted">
@@ -200,36 +236,13 @@ function Prescriptions({ file }: { file: PatientFile }) {
             </Pressable>
             {expanded ? (
               <View style={styles.items}>
-                {groupByName(p.items).map(([group, list]) => (
-                  <View key={group} style={styles.gap}>
-                    <AppText variant="caption" weight="bold" tone="primary" style={styles.upper}>
-                      {group}
-                    </AppText>
-                    {list.map((i, n) => (
-                      <View key={n} style={styles.item}>
-                        <View style={styles.bullet} />
-                        <View style={styles.flex}>
-                          <AppText variant="label" weight="semibold">
-                            {i.name}
-                          </AppText>
-                          {i.dose || i.instructions ? (
-                            <AppText variant="caption" tone="muted">
-                              {[i.dose, i.instructions].filter(Boolean).join(' · ')}
-                            </AppText>
-                          ) : null}
-                        </View>
-                      </View>
-                    ))}
-                  </View>
-                ))}
-                {htmlToMarkup(p.planTreatment) ? (
-                  <View style={styles.plan}>
-                    <AppText variant="caption" weight="semibold" tone="muted">
-                      PLAN OF TREATMENT
-                    </AppText>
-                    <RichTextView html={p.planTreatment} />
+                {p.diagnosis?.trim() ? (
+                  <View style={styles.gap}>
+                    <PrescriptionHeading title="Diagnosis" />
+                    <AppText>{p.diagnosis.trim()}</AppText>
                   </View>
                 ) : null}
+                <PrescriptionSections items={p.items} />
                 {remark ? (
                   <View style={styles.remarkBox}>
                     <View style={styles.between}>
@@ -275,100 +288,54 @@ function Prescriptions({ file }: { file: PatientFile }) {
 }
 
 function PlanOfTreatment({ file }: { file: PatientFile }) {
-  const [picking, setPicking] = useState(false);
-  const planned = file.prescriptions.filter((p) => hasPlan(p.planTreatment));
-  const open = file.prescriptions.filter((p) => p.editable && !hasPlan(p.planTreatment));
-  const add = () => {
-    const [only] = open;
-    if (open.length === 1 && only) openPlan(only.id, file.patient.id);
-    else setPicking((v) => !v);
-  };
+  const entries = planEntries(file);
   return (
     <>
       <View style={styles.between}>
         <AppText weight="semibold" accessibilityRole="header" style={styles.flex}>
           Plan of treatment
         </AppText>
-        {open.length ? (
-          <Pressable
-            accessibilityRole="button"
-            accessibilityLabel="Add a plan of treatment"
-            accessibilityState={{ expanded: picking }}
-            onPress={add}
-            hitSlop={6}
-            style={({ pressed }) => [styles.addButton, pressed && styles.addPressed]}
-          >
-            <Plus size={icon.sm} color={colors.textInverse} />
-            <AppText variant="label" weight="semibold" style={styles.heroText}>
-              Add
-            </AppText>
-          </Pressable>
-        ) : null}
-      </View>
-      {picking ? (
-        <View style={styles.picker}>
-          <AppText variant="caption" tone="muted">
-            Choose the prescription to write the plan on
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel="Add a new plan of treatment"
+          onPress={() => openTreatmentPlan('new', file.patient.id)}
+          hitSlop={6}
+          style={({ pressed }) => [styles.addButton, pressed && styles.addPressed]}
+        >
+          <Plus size={icon.sm} color={colors.textInverse} />
+          <AppText variant="label" weight="semibold" style={styles.heroText}>
+            Add
           </AppText>
-          {open.map((p) => (
-            <Pressable
-              key={p.id}
-              accessibilityRole="button"
-              accessibilityLabel={`Prescription ${p.prescriptionNo}`}
-              onPress={() => {
-                setPicking(false);
-                openPlan(p.id, file.patient.id);
-              }}
-              style={({ pressed }) => [styles.pick, pressed && styles.filePressed]}
-            >
-              <Pill size={icon.sm} color={colors.primary} />
-              <View style={styles.flex}>
-                <AppText variant="label" weight="semibold">
-                  Prescription #{p.prescriptionNo}
-                </AppText>
-                <AppText variant="caption" tone="muted" numberOfLines={1}>
-                  {[formatDate(p.date), p.diagnosis].filter(Boolean).join(' · ')}
-                </AppText>
-              </View>
-            </Pressable>
-          ))}
-        </View>
-      ) : null}
-      {planned.length ? (
-        planned.map((p, index) => (
-          <Entry key={p.id} date={p.date} last={index === planned.length - 1}>
+        </Pressable>
+      </View>
+      {entries.length ? (
+        entries.map((entry, index) => (
+          <Entry key={entry.key} date={entry.date} last={index === entries.length - 1}>
             <View style={styles.between}>
-              <AppText weight="semibold">Prescription #{p.prescriptionNo}</AppText>
-              {p.editable ? (
+              <AppText weight="semibold" style={styles.flex}>
+                {entry.title}
+              </AppText>
+              {entry.edit ? (
                 <Pressable
                   accessibilityRole="button"
-                  accessibilityLabel={`Edit the plan of prescription ${p.prescriptionNo}`}
+                  accessibilityLabel={`Edit ${entry.title}`}
                   hitSlop={8}
-                  onPress={() => openPlan(p.id, file.patient.id)}
+                  onPress={entry.edit}
                   style={styles.pencil}
                 >
                   <Pencil size={icon.sm} color={colors.primary} />
                 </Pressable>
               ) : null}
             </View>
-            <Source verb="Planned by" doctor={p.doctor} branch={p.branch} />
-            <RichTextView html={p.planTreatment} />
-            {p.followupDate ? (
-              <AppText variant="caption" tone="muted">
-                Follow up {formatDate(p.followupDate)}
-              </AppText>
-            ) : null}
+            <Source verb="Planned by" doctor={entry.doctor} branch={entry.branch} />
+            <RichTextView html={entry.html} />
           </Entry>
         ))
       ) : (
         <EmptyState
           icon={NotebookPen}
           title="No plan of treatment"
-          message={
-            open.length
-              ? 'Tap Add to write the plan on one of your prescriptions.'
-              : 'Plans written on prescriptions show here.'
-          }
+          message="Tap Add to write a plan of treatment for this patient."
         />
       )}
     </>
@@ -500,7 +467,7 @@ type VisitsView = 'plan' | 'prescriptions' | 'remarks';
 
 function Visits({ file }: { file: PatientFile }) {
   const [view, setView] = useState<VisitsView>('plan');
-  const planned = file.prescriptions.filter((p) => hasPlan(p.planTreatment)).length;
+  const planned = planEntries(file).length;
   return (
     <View style={styles.records}>
       <Segment
@@ -692,7 +659,6 @@ export default function DoctorPatientFileScreen() {
 const styles = StyleSheet.create({
   flex: { flex: 1, minWidth: 0 },
   gap: { gap: space.xs },
-  upper: { textTransform: 'uppercase', letterSpacing: 0.6 },
   between: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: space.sm },
   hero: { padding: space.lg, gap: space.md, borderRadius: radius.lg, backgroundColor: colors.primary },
   heroTop: { flexDirection: 'row', alignItems: 'center', gap: space.md },
@@ -770,9 +736,6 @@ const styles = StyleSheet.create({
     borderTopWidth: StyleSheet.hairlineWidth,
     borderTopColor: colors.border,
   },
-  item: { flexDirection: 'row', gap: space.sm },
-  bullet: { width: 6, height: 6, marginTop: 7, borderRadius: radius.pill, backgroundColor: colors.primary },
-  plan: { gap: space.xs, padding: space.sm, borderRadius: radius.md, backgroundColor: colors.primarySoft },
   file: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -805,23 +768,6 @@ const styles = StyleSheet.create({
     backgroundColor: colors.primary,
   },
   addPressed: { backgroundColor: colors.primaryPressed },
-  picker: {
-    gap: space.sm,
-    padding: space.md,
-    borderRadius: radius.lg,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: colors.border,
-    backgroundColor: colors.surface,
-  },
-  pick: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: space.sm,
-    padding: space.sm,
-    minHeight: touch.minHeight,
-    borderRadius: radius.md,
-    backgroundColor: colors.surfaceMuted,
-  },
   sectionHead: { flexDirection: 'row', alignItems: 'center', gap: space.sm },
   branchRow: { flexDirection: 'row', alignItems: 'center', gap: space.xs },
   source: { gap: space.xxs },

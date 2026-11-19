@@ -56,8 +56,8 @@ function buildHtml(p: PrescriptionDetail, patient: PatientProfile | undefined, l
   .title .word { font-size: 15px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; }
   .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px 24px; margin-top: 14px; }
   .block { margin-top: 14px; page-break-inside: avoid; }
-  .heading { font-size: 11px; font-weight: 700; color: #0B6E66; letter-spacing: 0.06em; text-transform: uppercase; border-bottom: 1px solid #DDE4E5; padding-bottom: 4px; margin-bottom: 6px; }
-  .group { font-size: 11px; font-weight: 600; color: #55666C; margin-top: 6px; }
+  .heading { font-size: 14px; font-weight: 700; color: #0B6E66; letter-spacing: 0.06em; text-transform: uppercase; border-bottom: 1px solid #DDE4E5; padding-bottom: 4px; margin-bottom: 6px; }
+  .group { font-size: 12px; font-weight: 600; color: #55666C; margin-top: 6px; }
   ul { margin: 2px 0 0; padding-left: 20px; }
   li { margin-bottom: 6px; }
   .note { font-size: 11px; color: #55666C; }
