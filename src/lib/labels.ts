@@ -46,15 +46,4 @@ export const REQUEST_CATEGORY_LABELS: Record<RequestCategory, string> = {
 export const MODE_LABELS = { online: 'Online consultation', physical: 'Clinic visit' } as const;
 export const VISIT_LABELS = { new: 'First visit', followup: 'Follow-up' } as const;
 
-export const PRESCRIPTION_CATEGORY_LABELS: Record<string, string> = {
-  lab: 'Lab tests',
-  imaging: 'Imaging',
-  genetic: 'Genetic tests',
-  supplement: 'Supplements',
-  medicine: 'Medicines',
-  glp: 'GLP',
-  skin_care: 'Skin care',
-  hair_care: 'Hair care',
-  bhrt: 'BHRT',
-  symptom: 'Symptom care',
-};
+export { PRESCRIPTION_CATEGORY_LABELS } from './prescription-blocks';

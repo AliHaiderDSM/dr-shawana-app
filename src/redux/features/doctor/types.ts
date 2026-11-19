@@ -97,6 +97,7 @@ export interface PatientFilePrescription {
   consultationId?: string | null;
   doctor: string | null;
   branch?: string | null;
+  editable?: boolean;
   items: { groupName: string; name: string; dose: string | null; instructions: string | null }[];
 }
 

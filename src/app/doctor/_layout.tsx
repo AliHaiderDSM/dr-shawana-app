@@ -19,6 +19,7 @@ export default function DoctorLayout() {
       <Stack.Screen name="chat/[conversationId]" options={{ title: 'Patient' }} />
       <Stack.Screen name="patient/[patientId]" options={{ title: 'Patient file' }} />
       <Stack.Screen name="remarks/[consultationId]" options={{ title: 'Clinical remarks' }} />
+      <Stack.Screen name="plan/[prescriptionId]" options={{ title: 'Plan of treatment' }} />
       <Stack.Screen name="appointments" options={{ title: 'Appointments' }} />
       <Stack.Screen name="medicines/index" options={{ title: 'Medicines' }} />
       <Stack.Screen name="medicines/[patientId]" options={{ title: 'Medicines' }} />

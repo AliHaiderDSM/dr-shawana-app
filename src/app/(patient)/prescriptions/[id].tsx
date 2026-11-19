@@ -11,19 +11,44 @@ import { Screen } from '@/components/ui/screen';
 import { StatusBadge } from '@/components/ui/status-badge';
 import { useRefresh } from '@/hooks/use-refresh';
 import { formatDate, htmlToText } from '@/lib/format';
-import { PRESCRIPTION_CATEGORY_LABELS } from '@/lib/labels';
+import { prescriptionBlocks } from '@/lib/prescription-blocks';
 import { sharePrescriptionPdf } from '@/lib/prescription-pdf';
 import { useGetMeQuery } from '@/redux/features/patient';
-import { colors, space } from '@/theme/tokens';
+import { colors, radius, space } from '@/theme/tokens';
 import { type PrescriptionItem, useGetPrescriptionQuery } from '@/redux/features/prescriptions';
 
-function groupItems(items: PrescriptionItem[]) {
-  const groups = new Map<string, PrescriptionItem[]>();
-  for (const item of items) {
-    const key = PRESCRIPTION_CATEGORY_LABELS[item.category] ?? 'Other';
-    groups.set(key, [...(groups.get(key) ?? []), item]);
-  }
-  return [...groups.entries()];
+function ItemRow({ item, first }: { item: PrescriptionItem; first: boolean }) {
+  return (
+    <View style={[styles.item, !first && styles.itemBorder]}>
+      <View style={styles.itemHead}>
+        <View style={styles.bullet} />
+        <AppText weight="semibold" style={styles.flex}>
+          {item.name}
+        </AppText>
+        {item.optional ? <StatusBadge label="Optional" tone="neutral" /> : null}
+      </View>
+      {item.dose ? (
+        <AppText variant="label" style={styles.indent}>
+          {item.dose}
+        </AppText>
+      ) : null}
+      {item.instructions ? (
+        <AppText variant="label" tone="muted" style={styles.indent}>
+          How to use: {item.instructions}
+        </AppText>
+      ) : null}
+    </View>
+  );
+}
+
+function BlockHeading({ title }: { title: string }) {
+  return (
+    <View style={styles.blockHeading}>
+      <AppText variant="label" weight="bold" tone="primary" accessibilityRole="header" style={styles.upper}>
+        {title}
+      </AppText>
+    </View>
+  );
 }
 
 export default function PrescriptionDetailScreen() {
@@ -102,37 +127,35 @@ export default function PrescriptionDetailScreen() {
         />
       ) : null}
 
-      {groupItems(p.items).map(([group, items]) => (
-        <View key={group} style={styles.group}>
-          <SectionHeader title={group} />
-          <Card>
-            {items.map((item, index) => (
-              <View key={item.id} style={[styles.item, index > 0 && styles.itemBorder]}>
-                <View style={styles.itemHead}>
-                  <AppText weight="semibold" style={styles.flex}>
-                    {item.name}
-                  </AppText>
-                  {item.optional ? <StatusBadge label="Optional" tone="neutral" /> : null}
-                </View>
-                {item.dose ? <AppText variant="label">{item.dose}</AppText> : null}
-                {item.instructions ? (
-                  <AppText variant="label" tone="muted">
-                    {item.instructions}
-                  </AppText>
-                ) : null}
-              </View>
-            ))}
-          </Card>
-        </View>
+      {prescriptionBlocks(p.items).map((block) => (
+        <Card key={block.title}>
+          <BlockHeading title={block.title} />
+          {block.groups.map((group) => (
+            <View key={group.name} style={styles.group}>
+              <AppText variant="caption" weight="semibold" tone="muted">
+                {group.name}
+              </AppText>
+              {group.items.map((item, index) => (
+                <ItemRow key={item.id} item={item} first={index === 0} />
+              ))}
+            </View>
+          ))}
+        </Card>
       ))}
 
-      {plan ? (
-        <>
-          <SectionHeader title="Plan and advice" />
-          <Card>
-            <AppText selectable>{plan}</AppText>
-          </Card>
-        </>
+      {plan || p.followupDate ? (
+        <Card>
+          <BlockHeading title="Plan of treatment" />
+          {plan ? <AppText selectable>{plan}</AppText> : null}
+          {p.followupDate ? (
+            <AppText variant="label">
+              <AppText variant="label" weight="semibold">
+                Follow up date:{' '}
+              </AppText>
+              {formatDate(p.followupDate)}
+            </AppText>
+          ) : null}
+        </Card>
       ) : null}
 
       <Notice>Take medicines only as your doctor advised. Questions about this prescription?</Notice>
@@ -147,9 +170,17 @@ export default function PrescriptionDetailScreen() {
 }
 
 const styles = StyleSheet.create({
-  group: { gap: space.sm },
-  item: { gap: space.xs, paddingVertical: space.sm },
+  group: { gap: space.xxs, marginTop: space.xs },
+  item: { gap: space.xxs, paddingVertical: space.sm },
   itemBorder: { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: colors.border },
   itemHead: { flexDirection: 'row', alignItems: 'center', gap: space.sm },
+  bullet: { width: 6, height: 6, borderRadius: radius.pill, backgroundColor: colors.primary },
+  indent: { paddingLeft: space.md },
+  blockHeading: {
+    paddingBottom: space.xs,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: colors.border,
+  },
+  upper: { textTransform: 'uppercase', letterSpacing: 0.6 },
   flex: { flex: 1, minWidth: 0 },
 });

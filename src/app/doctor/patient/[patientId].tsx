@@ -11,8 +11,10 @@ import {
   FlaskConical,
   FolderHeart,
   MessageCircle,
+  NotebookPen,
   Pencil,
   Pill,
+  Plus,
   Ruler,
   Scale,
   Stethoscope,
@@ -52,6 +54,20 @@ const TABS: { key: Tab; label: string; icon: typeof Pill }[] = [
 const openRemarks = (consultationId: string, patientId: string) =>
   router.push({ pathname: '/doctor/remarks/[consultationId]', params: { consultationId, patientId } });
 
+const openPlan = (prescriptionId: string, patientId: string) =>
+  router.push({ pathname: '/doctor/plan/[prescriptionId]', params: { prescriptionId, patientId } });
+
+const hasPlan = (html: string | null) => Boolean(htmlToMarkup(html).trim());
+
+function groupByName<T extends { groupName: string | null }>(items: T[]) {
+  const groups = new Map<string, T[]>();
+  for (const item of items) {
+    const name = item.groupName?.trim() || 'Other';
+    groups.set(name, [...(groups.get(name) ?? []), item]);
+  }
+  return [...groups];
+}
+
 function Segment<T extends string>({
   value,
   onChange,
@@ -76,7 +92,7 @@ function Segment<T extends string>({
             style={[styles.segmentItem, on && styles.segmentOn]}
           >
             <Icon size={icon.sm} color={on ? colors.primary : colors.textMuted} />
-            <AppText variant="label" weight="semibold" tone={on ? 'primary' : 'muted'}>
+            <AppText variant="label" weight="semibold" tone={on ? 'primary' : 'muted'} numberOfLines={1}>
               {o.label}
             </AppText>
             <AppText variant="caption" weight="bold" tone={on ? 'primary' : 'muted'}>
@@ -184,19 +200,26 @@ function Prescriptions({ file }: { file: PatientFile }) {
             </Pressable>
             {expanded ? (
               <View style={styles.items}>
-                {p.items.map((i, n) => (
-                  <View key={n} style={styles.item}>
-                    <View style={styles.bullet} />
-                    <View style={styles.flex}>
-                      <AppText variant="label" weight="semibold">
-                        {i.name}
-                      </AppText>
-                      {i.dose || i.instructions ? (
-                        <AppText variant="caption" tone="muted">
-                          {[i.dose, i.instructions].filter(Boolean).join(' · ')}
-                        </AppText>
-                      ) : null}
-                    </View>
+                {groupByName(p.items).map(([group, list]) => (
+                  <View key={group} style={styles.gap}>
+                    <AppText variant="caption" weight="bold" tone="primary" style={styles.upper}>
+                      {group}
+                    </AppText>
+                    {list.map((i, n) => (
+                      <View key={n} style={styles.item}>
+                        <View style={styles.bullet} />
+                        <View style={styles.flex}>
+                          <AppText variant="label" weight="semibold">
+                            {i.name}
+                          </AppText>
+                          {i.dose || i.instructions ? (
+                            <AppText variant="caption" tone="muted">
+                              {[i.dose, i.instructions].filter(Boolean).join(' · ')}
+                            </AppText>
+                          ) : null}
+                        </View>
+                      </View>
+                    ))}
                   </View>
                 ))}
                 {htmlToMarkup(p.planTreatment) ? (
@@ -247,6 +270,107 @@ function Prescriptions({ file }: { file: PatientFile }) {
           </Entry>
         );
       })}
+    </>
+  );
+}
+
+function PlanOfTreatment({ file }: { file: PatientFile }) {
+  const [picking, setPicking] = useState(false);
+  const planned = file.prescriptions.filter((p) => hasPlan(p.planTreatment));
+  const open = file.prescriptions.filter((p) => p.editable && !hasPlan(p.planTreatment));
+  const add = () => {
+    const [only] = open;
+    if (open.length === 1 && only) openPlan(only.id, file.patient.id);
+    else setPicking((v) => !v);
+  };
+  return (
+    <>
+      <View style={styles.between}>
+        <AppText weight="semibold" accessibilityRole="header" style={styles.flex}>
+          Plan of treatment
+        </AppText>
+        {open.length ? (
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Add a plan of treatment"
+            accessibilityState={{ expanded: picking }}
+            onPress={add}
+            hitSlop={6}
+            style={({ pressed }) => [styles.addButton, pressed && styles.addPressed]}
+          >
+            <Plus size={icon.sm} color={colors.textInverse} />
+            <AppText variant="label" weight="semibold" style={styles.heroText}>
+              Add
+            </AppText>
+          </Pressable>
+        ) : null}
+      </View>
+      {picking ? (
+        <View style={styles.picker}>
+          <AppText variant="caption" tone="muted">
+            Choose the prescription to write the plan on
+          </AppText>
+          {open.map((p) => (
+            <Pressable
+              key={p.id}
+              accessibilityRole="button"
+              accessibilityLabel={`Prescription ${p.prescriptionNo}`}
+              onPress={() => {
+                setPicking(false);
+                openPlan(p.id, file.patient.id);
+              }}
+              style={({ pressed }) => [styles.pick, pressed && styles.filePressed]}
+            >
+              <Pill size={icon.sm} color={colors.primary} />
+              <View style={styles.flex}>
+                <AppText variant="label" weight="semibold">
+                  Prescription #{p.prescriptionNo}
+                </AppText>
+                <AppText variant="caption" tone="muted" numberOfLines={1}>
+                  {[formatDate(p.date), p.diagnosis].filter(Boolean).join(' · ')}
+                </AppText>
+              </View>
+            </Pressable>
+          ))}
+        </View>
+      ) : null}
+      {planned.length ? (
+        planned.map((p, index) => (
+          <Entry key={p.id} date={p.date} last={index === planned.length - 1}>
+            <View style={styles.between}>
+              <AppText weight="semibold">Prescription #{p.prescriptionNo}</AppText>
+              {p.editable ? (
+                <Pressable
+                  accessibilityRole="button"
+                  accessibilityLabel={`Edit the plan of prescription ${p.prescriptionNo}`}
+                  hitSlop={8}
+                  onPress={() => openPlan(p.id, file.patient.id)}
+                  style={styles.pencil}
+                >
+                  <Pencil size={icon.sm} color={colors.primary} />
+                </Pressable>
+              ) : null}
+            </View>
+            <Source verb="Planned by" doctor={p.doctor} branch={p.branch} />
+            <RichTextView html={p.planTreatment} />
+            {p.followupDate ? (
+              <AppText variant="caption" tone="muted">
+                Follow up {formatDate(p.followupDate)}
+              </AppText>
+            ) : null}
+          </Entry>
+        ))
+      ) : (
+        <EmptyState
+          icon={NotebookPen}
+          title="No plan of treatment"
+          message={
+            open.length
+              ? 'Tap Add to write the plan on one of your prescriptions.'
+              : 'Plans written on prescriptions show here.'
+          }
+        />
+      )}
     </>
   );
 }
@@ -372,21 +496,25 @@ function RecordFiles({ file }: { file: PatientFile }) {
   );
 }
 
-type VisitsView = 'prescriptions' | 'remarks';
+type VisitsView = 'plan' | 'prescriptions' | 'remarks';
 
 function Visits({ file }: { file: PatientFile }) {
-  const [view, setView] = useState<VisitsView>('prescriptions');
+  const [view, setView] = useState<VisitsView>('plan');
+  const planned = file.prescriptions.filter((p) => hasPlan(p.planTreatment)).length;
   return (
     <View style={styles.records}>
       <Segment
         value={view}
         onChange={setView}
         options={[
+          { key: 'plan', label: 'Plan', icon: NotebookPen, count: planned },
           { key: 'prescriptions', label: 'Prescriptions', icon: Pill, count: file.prescriptions.length },
-          { key: 'remarks', label: 'Clinical remarks', icon: ClipboardList, count: file.remarks.length },
+          { key: 'remarks', label: 'Remarks', icon: ClipboardList, count: file.remarks.length },
         ]}
       />
-      {view === 'prescriptions' ? <Prescriptions file={file} /> : <Remarks file={file} />}
+      {view === 'plan' ? <PlanOfTreatment file={file} /> : null}
+      {view === 'prescriptions' ? <Prescriptions file={file} /> : null}
+      {view === 'remarks' ? <Remarks file={file} /> : null}
     </View>
   );
 }
@@ -564,6 +692,7 @@ export default function DoctorPatientFileScreen() {
 const styles = StyleSheet.create({
   flex: { flex: 1, minWidth: 0 },
   gap: { gap: space.xs },
+  upper: { textTransform: 'uppercase', letterSpacing: 0.6 },
   between: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: space.sm },
   hero: { padding: space.lg, gap: space.md, borderRadius: radius.lg, backgroundColor: colors.primary },
   heroTop: { flexDirection: 'row', alignItems: 'center', gap: space.md },
@@ -666,6 +795,33 @@ const styles = StyleSheet.create({
     backgroundColor: colors.surface,
   },
   pencil: { padding: space.xs, borderRadius: radius.pill, backgroundColor: colors.primarySoft },
+  addButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: space.xxs,
+    paddingHorizontal: space.md,
+    minHeight: touch.iconButton - 8,
+    borderRadius: radius.pill,
+    backgroundColor: colors.primary,
+  },
+  addPressed: { backgroundColor: colors.primaryPressed },
+  picker: {
+    gap: space.sm,
+    padding: space.md,
+    borderRadius: radius.lg,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: colors.border,
+    backgroundColor: colors.surface,
+  },
+  pick: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: space.sm,
+    padding: space.sm,
+    minHeight: touch.minHeight,
+    borderRadius: radius.md,
+    backgroundColor: colors.surfaceMuted,
+  },
   sectionHead: { flexDirection: 'row', alignItems: 'center', gap: space.sm },
   branchRow: { flexDirection: 'row', alignItems: 'center', gap: space.xs },
   source: { gap: space.xxs },
@@ -682,7 +838,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: space.xs,
+    gap: space.xxs,
+    paddingHorizontal: space.xxs,
     minHeight: 40,
     borderRadius: radius.sm,
   },

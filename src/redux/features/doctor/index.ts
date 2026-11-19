@@ -105,6 +105,18 @@ export const doctorApi = baseApi.injectEndpoints({
       invalidatesTags: (_r, error, { patientId }) =>
         error ? [] : [{ type: 'DoctorPatient', id: patientId }],
     }),
+    saveDoctorPlan: build.mutation<
+      void,
+      { prescriptionId: string; patientId: string; planTreatment: string | null }
+    >({
+      query: ({ prescriptionId, planTreatment }) => ({
+        url: `/doctor/prescriptions/${encodeURIComponent(prescriptionId)}/plan`,
+        method: 'PUT',
+        body: { planTreatment },
+      }),
+      invalidatesTags: (_r, error, { patientId }) =>
+        error ? [] : [{ type: 'DoctorPatient', id: patientId }],
+    }),
     saveDoctorPushToken: build.mutation<void, PushTokenInput>({
       query: (body) => ({ url: '/doctor/push-token', method: 'POST', body }),
     }),
@@ -163,6 +175,7 @@ export const {
   useOpenDoctorChatMutation,
   useLazyGetDoctorRecordUrlQuery,
   useSaveDoctorRemarksMutation,
+  useSaveDoctorPlanMutation,
   useGetDoctorProfileQuery,
   useGetDoctorAppointmentsQuery,
   useGetDoctorMonthQuery,
