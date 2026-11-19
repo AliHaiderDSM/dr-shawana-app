@@ -8,6 +8,7 @@ import {
   ClipboardList,
   FileImage,
   FileText,
+  FlaskConical,
   FolderHeart,
   MessageCircle,
   NotebookPen,
@@ -22,6 +23,7 @@ import { useState, type ReactNode } from 'react';
 import { ActivityIndicator, Alert, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { openChatWith } from '@/components/doctor/open-chat';
 import { Initials } from '@/components/doctor/parts';
+import { BloodWorkView } from '@/components/doctor/blood-work';
 import { CardSkeleton, EmptyState, ErrorState } from '@/components/feedback/states';
 import { PrescriptionHeading, PrescriptionSections } from '@/components/prescription-sections';
 import { AppText } from '@/components/ui/app-text';
@@ -36,6 +38,7 @@ import { groupRecords } from '@/lib/record-groups';
 import { htmlToMarkup } from '@/lib/rich-text';
 import { colors, icon, radius, shadow, space, touch } from '@/theme/tokens';
 import {
+  type BloodWork,
   type PlanItem,
   type PatientFile,
   useGetDoctorPatientFileQuery,
@@ -518,10 +521,23 @@ function Visits({ file }: { file: PatientFile }) {
   );
 }
 
+const NO_BLOOD_WORK: BloodWork = { dates: [], tests: [] };
+
 function Records({ file }: { file: PatientFile }) {
+  const blood = file.bloodWork ?? NO_BLOOD_WORK;
   const fileCount = file.records.reduce((sum, r) => sum + r.files.length, 0);
   return (
     <View style={styles.records}>
+      <View style={styles.sectionHead}>
+        <FlaskConical size={icon.md} color={colors.primary} />
+        <AppText weight="semibold" style={styles.flex}>
+          Blood work
+        </AppText>
+        <AppText variant="caption" tone="muted">
+          {blood.dates.length} test date{blood.dates.length === 1 ? '' : 's'}
+        </AppText>
+      </View>
+      <BloodWorkView data={blood} />
       <View style={styles.sectionHead}>
         <FileText size={icon.md} color={colors.primary} />
         <AppText weight="semibold" style={styles.flex}>
