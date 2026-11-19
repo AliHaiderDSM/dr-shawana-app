@@ -56,6 +56,7 @@ export default function ChatScreen() {
       sending={sendState.isLoading}
       fileUrl={async (messageId) => (await getFileUrl({ doctorId, messageId }).unwrap()).url}
       hint="Messages go to your doctor only. Not for emergencies."
+      onOpenPlan={(planId) => router.push({ pathname: '/treatment-plan', params: { planId } })}
       emptyText="Write your first message. Your doctor replies here."
     />
   );

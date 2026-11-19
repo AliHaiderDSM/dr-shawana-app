@@ -23,6 +23,7 @@ export interface ChatMessage {
   body: string | null;
   file: { name: string; type: string; size: number; durationMs?: number | null } | null;
   replyTo?: ChatReplyTo | null;
+  planId?: string | null;
   createdAt: string;
 }
 

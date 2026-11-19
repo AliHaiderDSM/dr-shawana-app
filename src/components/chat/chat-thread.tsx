@@ -1,6 +1,16 @@
 import { Stack } from 'expo-router';
 import * as WebBrowser from 'expo-web-browser';
-import { FileImage, FileText, ImagePlus, Mic, Send, Trash2, X } from 'lucide-react-native';
+import {
+  ChevronRight,
+  FileImage,
+  FileText,
+  ImagePlus,
+  Mic,
+  NotebookPen,
+  Send,
+  Trash2,
+  X,
+} from 'lucide-react-native';
 import { useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Alert, FlatList, Pressable, StyleSheet, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -49,6 +59,7 @@ export interface ChatThreadProps {
   fileUrl: (messageId: string) => Promise<string>;
   hint: string;
   emptyText: string;
+  onOpenPlan?: (planId: string) => void;
 }
 
 const clock = (iso: string) => {
@@ -120,6 +131,7 @@ function Bubble({
   onOpen,
   loadUrl,
   onReply,
+  onOpenPlan,
   me,
   otherLabel,
 }: {
@@ -129,6 +141,7 @@ function Bubble({
   onOpen: (m: ChatMessage) => void;
   loadUrl: (m: ChatMessage) => Promise<string>;
   onReply: (m: ChatMessage) => void;
+  onOpenPlan?: (planId: string) => void;
   me: ChatSide;
   otherLabel: string;
 }) {
@@ -170,7 +183,45 @@ function Bubble({
                 </AppText>
               </Pressable>
             ) : null}
-            {message.body ? (
+            {message.planId ? (
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel={`${message.body ?? 'Plan of treatment'}. Open the plan`}
+                disabled={!onOpenPlan}
+                onPress={() => message.planId && onOpenPlan?.(message.planId)}
+                style={({ pressed }) => [
+                  styles.planCard,
+                  { backgroundColor: mine ? colors.onPrimarySoft : colors.primarySoft },
+                  pressed && styles.planPressed,
+                ]}
+              >
+                <NotebookPen size={icon.md} color={mine ? colors.textInverse : colors.primary} />
+                <View style={styles.flex}>
+                  <AppText
+                    variant="caption"
+                    weight="bold"
+                    style={[styles.planTag, { color: mine ? colors.textInverseMuted : colors.primary }]}
+                  >
+                    PLAN OF TREATMENT
+                  </AppText>
+                  <AppText weight="semibold" style={{ color: fg }}>
+                    {message.body}
+                  </AppText>
+                  {onOpenPlan ? (
+                    <AppText
+                      variant="label"
+                      weight="semibold"
+                      style={{ color: mine ? colors.textInverse : colors.primary }}
+                    >
+                      View plan
+                    </AppText>
+                  ) : null}
+                </View>
+                {onOpenPlan ? (
+                  <ChevronRight size={icon.md} color={mine ? colors.textInverse : colors.primary} />
+                ) : null}
+              </Pressable>
+            ) : message.body ? (
               <AppText selectable style={{ color: fg }}>
                 {message.body}
               </AppText>
@@ -204,6 +255,7 @@ export function ChatThread({
   fileUrl,
   hint,
   emptyText,
+  onOpenPlan,
 }: ChatThreadProps) {
   const [older, setOlder] = useState<ChatMessage[]>([]);
   const [moreOlder, setMoreOlder] = useState<boolean | null>(null);
@@ -362,6 +414,7 @@ export function ChatThread({
                   loadUrl={loadUrl}
                   me={me}
                   otherLabel={otherLabel}
+                  onOpenPlan={onOpenPlan}
                   onReply={(m) => {
                     setReplyTo(m);
                     input.current?.focus();
@@ -513,6 +566,15 @@ export function ChatThread({
 }
 
 const styles = StyleSheet.create({
+  planCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: space.sm,
+    padding: space.sm,
+    borderRadius: radius.md,
+  },
+  planPressed: { opacity: 0.8 },
+  planTag: { letterSpacing: 0.6 },
   root: { flex: 1, backgroundColor: colors.background },
   flex: { flex: 1, minWidth: 0 },
   header: { flexDirection: 'row', alignItems: 'center', gap: space.sm, maxWidth: 260 },

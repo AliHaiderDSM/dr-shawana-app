@@ -63,6 +63,15 @@ export default function DoctorChatScreen() {
       sending={sendState.isLoading}
       fileUrl={async (messageId) => (await getFileUrl({ conversationId, messageId }).unwrap()).url}
       hint="Only you and this patient see these messages."
+      onOpenPlan={
+        id
+          ? () =>
+              router.push({
+                pathname: '/doctor/patient/[patientId]',
+                params: { patientId: id, from: 'chat' },
+              })
+          : undefined
+      }
       emptyText="Write the first message. The patient gets a notification."
     />
   );
