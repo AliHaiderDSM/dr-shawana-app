@@ -20,6 +20,14 @@ export function usePushRegistration() {
   useEffect(
     () =>
       onNotificationTap((data) => {
+        if (data.type === 'treatment_plan') {
+          router.push(
+            typeof data.planId === 'string'
+              ? { pathname: '/treatment-plan', params: { planId: data.planId } }
+              : '/treatment-plan',
+          );
+          return;
+        }
         if (data.type !== 'chat') return;
         if (typeof data.doctorId === 'string') {
           router.push({ pathname: '/chats/[doctorId]', params: { doctorId: data.doctorId } });

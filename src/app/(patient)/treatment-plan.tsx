@@ -1,4 +1,6 @@
+import { useLocalSearchParams } from 'expo-router';
 import { FlaskConical, NotebookPen, Pill, Stethoscope } from 'lucide-react-native';
+import { useMemo } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { EmptyState } from '@/components/feedback/states';
 import { PrescriptionHeading } from '@/components/prescription-sections';
@@ -6,6 +8,7 @@ import { AppText } from '@/components/ui/app-text';
 import { Card } from '@/components/ui/card';
 import { ListScreen } from '@/components/ui/list-screen';
 import { RichTextView } from '@/components/ui/rich-text-view';
+import { StatusBadge } from '@/components/ui/status-badge';
 import { useRefresh } from '@/hooks/use-refresh';
 import { formatDate } from '@/lib/format';
 import { htmlToMarkup } from '@/lib/rich-text';
@@ -24,14 +27,20 @@ function Line({ name, detail }: { name: string; detail?: string | null }) {
   );
 }
 
-function PlanCard({ plan }: { plan: TreatmentPlan }) {
+const wasEdited = (plan: TreatmentPlan) =>
+  new Date(plan.updatedAt).getTime() - new Date(plan.createdAt).getTime() > 5000;
+
+function PlanCard({ plan, highlighted }: { plan: TreatmentPlan; highlighted: boolean }) {
   const written = Boolean(htmlToMarkup(plan.plan).trim());
   return (
-    <Card>
+    <Card style={highlighted ? styles.highlighted : undefined}>
       <View style={styles.head}>
-        <AppText variant="subheading" tone="primary">
-          {formatDate(plan.date)}
-        </AppText>
+        <View style={styles.titleRow}>
+          <AppText variant="subheading" tone="primary" style={styles.flex}>
+            {formatDate(plan.date)}
+          </AppText>
+          {highlighted ? <StatusBadge label={wasEdited(plan) ? 'Updated' : 'New'} tone="primary" /> : null}
+        </View>
         {plan.doctor ? (
           <View style={styles.doctor}>
             <Stethoscope size={icon.sm} color={colors.textMuted} />
@@ -70,11 +79,17 @@ function PlanCard({ plan }: { plan: TreatmentPlan }) {
 }
 
 export default function TreatmentPlanScreen() {
-  const plans = useGetTreatmentPlansQuery();
+  const { planId } = useLocalSearchParams<{ planId?: string }>();
+  const plans = useGetTreatmentPlansQuery(undefined, { refetchOnMountOrArgChange: true });
   const { refreshing, onRefresh } = useRefresh(plans.refetch);
+  const ordered = useMemo(() => {
+    const list = plans.data ?? [];
+    const picked = list.find((p) => p.id === planId);
+    return picked ? [picked, ...list.filter((p) => p.id !== planId)] : plans.data;
+  }, [plans.data, planId]);
   return (
     <ListScreen
-      data={plans.data}
+      data={ordered}
       keyExtractor={(p) => p.id}
       isLoading={plans.isLoading}
       error={plans.error}
@@ -96,7 +111,7 @@ export default function TreatmentPlanScreen() {
           </View>
         ) : null
       }
-      renderItem={({ item }) => <PlanCard plan={item} />}
+      renderItem={({ item }) => <PlanCard plan={item} highlighted={item.id === planId} />}
       empty={
         <EmptyState
           icon={NotebookPen}
@@ -113,6 +128,8 @@ const styles = StyleSheet.create({
   intro: { gap: space.xs },
   legend: { flexDirection: 'row', gap: space.sm },
   head: { gap: space.xxs },
+  titleRow: { flexDirection: 'row', alignItems: 'center', gap: space.sm },
+  highlighted: { borderWidth: 2, borderColor: colors.primary },
   doctor: { flexDirection: 'row', alignItems: 'center', gap: space.xs },
   blocks: { gap: space.lg, marginTop: space.sm },
   block: { gap: space.sm },

@@ -15,6 +15,8 @@ export interface TreatmentPlan {
   plan: string | null;
   doctor: string | null;
   branch: string | null;
+  createdAt: string;
+  updatedAt: string;
   medicines: { name: string; dose: string | null; groupName: string }[];
   bloodWork: { name: string; groupName: string }[];
 }
