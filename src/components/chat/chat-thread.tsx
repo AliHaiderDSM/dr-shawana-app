@@ -196,7 +196,7 @@ function Bubble({
                 ]}
               >
                 <NotebookPen size={icon.md} color={mine ? colors.textInverse : colors.primary} />
-                <View style={styles.flex}>
+                <View style={styles.planText}>
                   <AppText
                     variant="caption"
                     weight="bold"
@@ -204,9 +204,16 @@ function Bubble({
                   >
                     PLAN OF TREATMENT
                   </AppText>
-                  <AppText weight="semibold" style={{ color: fg }}>
-                    {message.body}
-                  </AppText>
+                  {(message.body ?? '').split('\n').map((line, index) => (
+                    <AppText
+                      key={index}
+                      variant={index === 0 ? 'body' : 'label'}
+                      weight={index === 0 ? 'semibold' : undefined}
+                      style={{ color: fg }}
+                    >
+                      {line}
+                    </AppText>
+                  ))}
                   {onOpenPlan ? (
                     <AppText
                       variant="label"
@@ -570,9 +577,12 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: space.sm,
+    width: 260,
+    maxWidth: '100%',
     padding: space.sm,
     borderRadius: radius.md,
   },
+  planText: { flexShrink: 1, gap: space.xxs },
   planPressed: { opacity: 0.8 },
   planTag: { letterSpacing: 0.6 },
   root: { flex: 1, backgroundColor: colors.background },
