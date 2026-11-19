@@ -18,6 +18,19 @@ import {
 
 const NEW_PLAN = 'new';
 
+type Focus = 'plan' | 'medicines' | 'blood_work';
+
+const COPY: Record<Focus | 'all', { title: string; add: string; empty: string }> = {
+  all: {
+    title: 'Plan of treatment',
+    add: 'Add plan',
+    empty: 'Write the plan or tick a medicine or blood test.',
+  },
+  plan: { title: 'Plan of treatment', add: 'Add plan', empty: 'Write the plan of treatment first.' },
+  medicines: { title: 'Medicines', add: 'Add medicines', empty: 'Tick at least one medicine.' },
+  blood_work: { title: 'Blood work', add: 'Add blood tests', empty: 'Tick at least one blood test.' },
+};
+
 const sameIds = (a: string[], b: string[]) => a.length === b.length && a.every((id) => b.includes(id));
 
 function PlanEditor({
@@ -34,6 +47,9 @@ function PlanEditor({
   focus: string | undefined;
 }) {
   const creating = !existing;
+  const showText = !focus || focus === 'plan';
+  const showMedicines = !focus || focus === 'medicines';
+  const showBloodWork = !focus || focus === 'blood_work';
   const initialIds = (existing?.items ?? []).map((i) => i.catalogItemId);
   const [ids, setIds] = useState<string[]>(initialIds);
   const options = useGetDoctorPlanOptionsQuery();
@@ -41,10 +57,12 @@ function PlanEditor({
   const [update, updating] = useUpdateDoctorTreatmentPlanMutation();
   const toggle = (id: string) =>
     setIds((current) => (current.includes(id) ? current.filter((x) => x !== id) : [...current, id]));
+  const copy = COPY[showText && !focus ? 'all' : (focus as Focus)] ?? COPY.all;
 
-  const submit = async (html: string | null) => {
+  const submit = async (written: string | null) => {
+    const html = showText ? written : (existing?.plan ?? null);
     if (!html && ids.length === 0) {
-      Alert.alert('Plan not saved', 'Write the plan or tick a medicine or blood test.');
+      Alert.alert('Not saved', copy.empty);
       return;
     }
     try {
@@ -53,7 +71,7 @@ function PlanEditor({
       else await update({ planId, patientId, ...body }).unwrap();
       router.back();
     } catch (error) {
-      Alert.alert('Plan not saved', errorMessage(error));
+      Alert.alert('Not saved', errorMessage(error));
     }
   };
 
@@ -62,39 +80,43 @@ function PlanEditor({
       initialHtml={existing?.plan ?? null}
       label="Plan of treatment"
       placeholder="Write the plan of treatment for this patient"
-      saveLabel={creating ? 'Add plan' : 'Save plan'}
+      saveLabel={creating ? copy.add : 'Save'}
       saving={adding.isLoading || updating.isLoading}
       extraChanged={!sameIds(ids, initialIds)}
-      autoFocus={!focus}
+      autoFocus={showText}
+      showText={showText}
       onSave={(html) => void submit(html)}
       header={
         <>
           <AppText weight="semibold">{patientName}</AppText>
           <AppText variant="caption" tone="muted">
-            {creating ? 'New plan, dated today' : `Plan of ${formatDay(existing.date)}`} · shows in the
-            patient file
+            {copy.title} · {creating ? 'dated today' : formatDay(existing.date)}
           </AppText>
         </>
       }
     >
-      <PlanItemPicker
-        title="Medicines"
-        addLabel="Add medicines"
-        options={options.data?.medicines ?? []}
-        selected={ids}
-        loading={options.isLoading}
-        onToggle={toggle}
-        defaultOpen={focus === 'medicines'}
-      />
-      <PlanItemPicker
-        title="Blood work"
-        addLabel="Add blood tests"
-        options={options.data?.bloodWork ?? []}
-        selected={ids}
-        loading={options.isLoading}
-        onToggle={toggle}
-        defaultOpen={focus === 'blood_work'}
-      />
+      {showMedicines ? (
+        <PlanItemPicker
+          title="Medicines"
+          addLabel="Add medicines"
+          options={options.data?.medicines ?? []}
+          selected={ids}
+          loading={options.isLoading}
+          onToggle={toggle}
+          defaultOpen={focus === 'medicines'}
+        />
+      ) : null}
+      {showBloodWork ? (
+        <PlanItemPicker
+          title="Blood work"
+          addLabel="Add blood tests"
+          options={options.data?.bloodWork ?? []}
+          selected={ids}
+          loading={options.isLoading}
+          onToggle={toggle}
+          defaultOpen={focus === 'blood_work'}
+        />
+      ) : null}
     </RichTextEditor>
   );
 }

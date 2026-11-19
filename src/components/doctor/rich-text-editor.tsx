@@ -58,6 +58,7 @@ export function RichTextEditor({
   onSave,
   extraChanged = false,
   autoFocus = true,
+  showText = true,
   children,
 }: {
   initialHtml: string | null;
@@ -69,6 +70,7 @@ export function RichTextEditor({
   onSave: (html: string | null) => void;
   extraChanged?: boolean;
   autoFocus?: boolean;
+  showText?: boolean;
   children?: ReactNode;
 }) {
   const initial = htmlToMarkup(initialHtml);
@@ -97,62 +99,70 @@ export function RichTextEditor({
     >
       <View style={styles.head}>{header}</View>
 
-      <View style={styles.bar}>
-        <View style={styles.tools}>
-          <Tool label="Bold" icon={Bold} onPress={() => apply(wrap(text, selection, '**'))} />
-          <Tool label="Italic" icon={Italic} onPress={() => apply(wrap(text, selection, '_'))} />
-          <Tool label="Bullet list" icon={List} onPress={() => apply(prefixLines(text, selection, false))} />
-          <Tool
-            label="Numbered list"
-            icon={ListOrdered}
-            onPress={() => apply(prefixLines(text, selection, true))}
-          />
-        </View>
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel={preview ? 'Back to writing' : 'Preview'}
-          onPress={() => setPreview((v) => !v)}
-          style={styles.mode}
-        >
-          {preview ? (
-            <PenLine size={icon.sm} color={colors.primary} />
-          ) : (
-            <Eye size={icon.sm} color={colors.primary} />
-          )}
-          <AppText variant="caption" weight="semibold" tone="primary">
-            {preview ? 'Write' : 'Preview'}
-          </AppText>
-        </Pressable>
-      </View>
+      {showText ? (
+        <>
+          <View style={styles.bar}>
+            <View style={styles.tools}>
+              <Tool label="Bold" icon={Bold} onPress={() => apply(wrap(text, selection, '**'))} />
+              <Tool label="Italic" icon={Italic} onPress={() => apply(wrap(text, selection, '_'))} />
+              <Tool
+                label="Bullet list"
+                icon={List}
+                onPress={() => apply(prefixLines(text, selection, false))}
+              />
+              <Tool
+                label="Numbered list"
+                icon={ListOrdered}
+                onPress={() => apply(prefixLines(text, selection, true))}
+              />
+            </View>
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel={preview ? 'Back to writing' : 'Preview'}
+              onPress={() => setPreview((v) => !v)}
+              style={styles.mode}
+            >
+              {preview ? (
+                <PenLine size={icon.sm} color={colors.primary} />
+              ) : (
+                <Eye size={icon.sm} color={colors.primary} />
+              )}
+              <AppText variant="caption" weight="semibold" tone="primary">
+                {preview ? 'Write' : 'Preview'}
+              </AppText>
+            </Pressable>
+          </View>
 
-      {preview ? (
-        <View style={styles.preview}>
-          {text.trim() ? (
-            <RichTextView html={markupToHtml(text)} />
+          {preview ? (
+            <View style={styles.preview}>
+              {text.trim() ? (
+                <RichTextView html={markupToHtml(text)} />
+              ) : (
+                <AppText tone="muted">Nothing written yet.</AppText>
+              )}
+            </View>
           ) : (
-            <AppText tone="muted">Nothing written yet.</AppText>
+            <TextInput
+              value={text}
+              onChangeText={setText}
+              selection={selection}
+              onSelectionChange={(e) => setSelection(e.nativeEvent.selection)}
+              multiline
+              autoFocus={autoFocus}
+              maxLength={50000}
+              placeholder={placeholder}
+              placeholderTextColor={colors.textMuted}
+              maxFontSizeMultiplier={maxFontScale}
+              accessibilityLabel={label}
+              textAlignVertical="top"
+              style={styles.input}
+            />
           )}
-        </View>
-      ) : (
-        <TextInput
-          value={text}
-          onChangeText={setText}
-          selection={selection}
-          onSelectionChange={(e) => setSelection(e.nativeEvent.selection)}
-          multiline
-          autoFocus={autoFocus}
-          maxLength={50000}
-          placeholder={placeholder}
-          placeholderTextColor={colors.textMuted}
-          maxFontSizeMultiplier={maxFontScale}
-          accessibilityLabel={label}
-          textAlignVertical="top"
-          style={styles.input}
-        />
-      )}
-      <AppText variant="caption" tone="muted">
-        Select words and tap B or I. Lists start each line with a bullet or a number.
-      </AppText>
+          <AppText variant="caption" tone="muted">
+            Select words and tap B or I. Lists start each line with a bullet or a number.
+          </AppText>
+        </>
+      ) : null}
       {children}
     </Screen>
   );

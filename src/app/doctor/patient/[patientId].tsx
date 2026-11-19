@@ -61,13 +61,10 @@ const openPlan = (prescriptionId: string, patientId: string) =>
 
 const hasPlan = (html: string | null) => Boolean(htmlToMarkup(html).trim());
 
-type PlanFocus = 'medicines' | 'blood_work';
+type PlanFocus = 'plan' | 'medicines' | 'blood_work';
 
-const openTreatmentPlan = (planId: string, patientId: string, focus?: PlanFocus) =>
-  router.push({
-    pathname: '/doctor/treatment-plan/[planId]',
-    params: focus ? { planId, patientId, focus } : { planId, patientId },
-  });
+const openTreatmentPlan = (planId: string, patientId: string, focus: PlanFocus) =>
+  router.push({ pathname: '/doctor/treatment-plan/[planId]', params: { planId, patientId, focus } });
 
 type PlanEntry = {
   key: string;
@@ -80,47 +77,37 @@ type PlanEntry = {
   edit: (() => void) | null;
 };
 
-function PlanItems({ items }: { items: PlanItem[] }) {
-  const lists = [
-    { title: 'Medicines', items: items.filter((i) => i.kind === 'medicine') },
-    { title: 'Blood work', items: items.filter((i) => i.kind === 'blood_work') },
-  ].filter((list) => list.items.length > 0);
-  if (!lists.length) return null;
+function PlanItemList({ items }: { items: PlanItem[] }) {
   return (
-    <View style={styles.planLists}>
-      {lists.map((list) => (
-        <View key={list.title} style={styles.gap}>
-          <AppText variant="caption" weight="bold" tone="primary" style={styles.upper}>
-            {list.title}
+    <View style={styles.gap}>
+      {items.map((item) => (
+        <View key={item.catalogItemId} style={styles.planItem}>
+          <View style={styles.dotSmall} />
+          <AppText variant="label" style={styles.flex}>
+            <AppText variant="label" weight="semibold">
+              {item.name}
+            </AppText>
+            {item.dose ? ` — ${item.dose}` : ''}
           </AppText>
-          {list.items.map((item) => (
-            <View key={item.catalogItemId} style={styles.planItem}>
-              <View style={styles.dotSmall} />
-              <AppText variant="label" style={styles.flex}>
-                <AppText variant="label" weight="semibold">
-                  {item.name}
-                </AppText>
-                {item.dose ? ` — ${item.dose}` : ''}
-              </AppText>
-            </View>
-          ))}
         </View>
       ))}
     </View>
   );
 }
 
-function planEntries(file: PatientFile): PlanEntry[] {
-  const own = (file.plans ?? []).map((t) => ({
-    key: `plan-${t.id}`,
-    date: t.date,
-    html: t.plan,
-    items: t.items ?? [],
-    doctor: t.doctor,
-    branch: t.branch,
-    title: 'Plan of treatment',
-    edit: t.editable ? () => openTreatmentPlan(t.id, file.patient.id) : null,
-  }));
+function textEntries(file: PatientFile): PlanEntry[] {
+  const own = (file.plans ?? [])
+    .filter((t) => hasPlan(t.plan))
+    .map((t) => ({
+      key: `plan-${t.id}`,
+      date: t.date,
+      html: t.plan,
+      items: [],
+      doctor: t.doctor,
+      branch: t.branch,
+      title: 'Plan of treatment',
+      edit: t.editable ? () => openTreatmentPlan(t.id, file.patient.id, 'plan') : null,
+    }));
   const fromPrescriptions = file.prescriptions
     .filter((p) => hasPlan(p.planTreatment))
     .map((p) => ({
@@ -135,6 +122,44 @@ function planEntries(file: PatientFile): PlanEntry[] {
     }));
   return [...own, ...fromPrescriptions].sort((a, b) => b.date.localeCompare(a.date));
 }
+
+function itemEntries(file: PatientFile, kind: PlanItem['kind'], focus: PlanFocus, title: string) {
+  return (file.plans ?? [])
+    .map((t) => ({ plan: t, items: (t.items ?? []).filter((i) => i.kind === kind) }))
+    .filter(({ items }) => items.length > 0)
+    .map(({ plan, items }) => ({
+      key: `${kind}-${plan.id}`,
+      date: plan.date,
+      html: null,
+      items,
+      doctor: plan.doctor,
+      branch: plan.branch,
+      title,
+      edit: plan.editable ? () => openTreatmentPlan(plan.id, file.patient.id, focus) : null,
+    }))
+    .sort((a, b) => b.date.localeCompare(a.date));
+}
+
+function planSections(file: PatientFile) {
+  return [
+    { focus: 'plan' as const, title: 'Plan of treatment', icon: NotebookPen, entries: textEntries(file) },
+    {
+      focus: 'medicines' as const,
+      title: 'Medicines',
+      icon: Pill,
+      entries: itemEntries(file, 'medicine', 'medicines', 'Medicines'),
+    },
+    {
+      focus: 'blood_work' as const,
+      title: 'Blood work',
+      icon: FlaskConical,
+      entries: itemEntries(file, 'blood_work', 'blood_work', 'Blood work'),
+    },
+  ];
+}
+
+const planCount = (file: PatientFile) =>
+  planSections(file).reduce((sum, section) => sum + section.entries.length, 0);
 
 function Segment<T extends string>({
   value,
@@ -328,85 +353,72 @@ function Prescriptions({ file }: { file: PatientFile }) {
   );
 }
 
+const EMPTY_PLAN_TEXT: Record<PlanFocus, string> = {
+  plan: 'No plan of treatment yet.',
+  medicines: 'No medicines added yet.',
+  blood_work: 'No blood tests added yet.',
+};
+
 function PlanOfTreatment({ file }: { file: PatientFile }) {
-  const entries = planEntries(file);
   return (
-    <>
-      <View style={styles.between}>
-        <AppText weight="semibold" accessibilityRole="header" style={styles.flex}>
-          Plan of treatment
-        </AppText>
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel="Add a new plan of treatment"
-          onPress={() => openTreatmentPlan('new', file.patient.id)}
-          hitSlop={6}
-          style={({ pressed }) => [styles.addButton, pressed && styles.addPressed]}
-        >
-          <Plus size={icon.sm} color={colors.textInverse} />
-          <AppText variant="label" weight="semibold" style={styles.heroText}>
-            Add
-          </AppText>
-        </Pressable>
-      </View>
-      <View style={styles.quickRow}>
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel="Add medicines to a new plan"
-          onPress={() => openTreatmentPlan('new', file.patient.id, 'medicines')}
-          style={({ pressed }) => [styles.quick, pressed && styles.quickPressed]}
-        >
-          <Plus size={icon.sm} color={colors.primary} />
-          <Pill size={icon.sm} color={colors.primary} />
-          <AppText variant="label" weight="semibold" tone="primary">
-            Medicines
-          </AppText>
-        </Pressable>
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel="Add blood tests to a new plan"
-          onPress={() => openTreatmentPlan('new', file.patient.id, 'blood_work')}
-          style={({ pressed }) => [styles.quick, pressed && styles.quickPressed]}
-        >
-          <Plus size={icon.sm} color={colors.primary} />
-          <FlaskConical size={icon.sm} color={colors.primary} />
-          <AppText variant="label" weight="semibold" tone="primary">
-            Blood work
-          </AppText>
-        </Pressable>
-      </View>
-      {entries.length ? (
-        entries.map((entry, index) => (
-          <Entry key={entry.key} date={entry.date} last={index === entries.length - 1}>
+    <View style={styles.planSections}>
+      {planSections(file).map((section) => {
+        const Icon = section.icon;
+        return (
+          <View key={section.focus} style={styles.planSection}>
             <View style={styles.between}>
-              <AppText weight="semibold" tone="primary" style={styles.flex}>
-                {entry.title}
-              </AppText>
-              {entry.edit ? (
-                <Pressable
-                  accessibilityRole="button"
-                  accessibilityLabel={`Edit ${entry.title}`}
-                  hitSlop={8}
-                  onPress={entry.edit}
-                  style={styles.pencil}
-                >
-                  <Pencil size={icon.sm} color={colors.primary} />
-                </Pressable>
-              ) : null}
+              <View style={styles.sectionTitle}>
+                <Icon size={icon.md} color={colors.primary} />
+                <AppText weight="semibold" accessibilityRole="header" style={styles.flex}>
+                  {section.title}
+                </AppText>
+              </View>
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel={`Add ${section.title.toLowerCase()}`}
+                onPress={() => openTreatmentPlan('new', file.patient.id, section.focus)}
+                hitSlop={6}
+                style={({ pressed }) => [styles.addButton, pressed && styles.addPressed]}
+              >
+                <Plus size={icon.sm} color={colors.textInverse} />
+                <AppText variant="label" weight="semibold" style={styles.heroText}>
+                  Add
+                </AppText>
+              </Pressable>
             </View>
-            <Source verb="Planned by" doctor={entry.doctor} branch={entry.branch} />
-            {entry.html && hasPlan(entry.html) ? <RichTextView html={entry.html} /> : null}
-            <PlanItems items={entry.items} />
-          </Entry>
-        ))
-      ) : (
-        <EmptyState
-          icon={NotebookPen}
-          title="No plan of treatment"
-          message="Tap Add to write a plan of treatment for this patient."
-        />
-      )}
-    </>
+            {section.entries.length ? (
+              section.entries.map((entry, index) => (
+                <Entry key={entry.key} date={entry.date} last={index === section.entries.length - 1}>
+                  <View style={styles.between}>
+                    <AppText weight="semibold" tone="primary" style={styles.flex}>
+                      {entry.title}
+                    </AppText>
+                    {entry.edit ? (
+                      <Pressable
+                        accessibilityRole="button"
+                        accessibilityLabel={`Edit ${entry.title}`}
+                        hitSlop={8}
+                        onPress={entry.edit}
+                        style={styles.pencil}
+                      >
+                        <Pencil size={icon.sm} color={colors.primary} />
+                      </Pressable>
+                    ) : null}
+                  </View>
+                  <Source verb="Planned by" doctor={entry.doctor} branch={entry.branch} />
+                  {entry.html ? <RichTextView html={entry.html} /> : null}
+                  {entry.items.length ? <PlanItemList items={entry.items} /> : null}
+                </Entry>
+              ))
+            ) : (
+              <AppText variant="label" tone="muted" style={styles.planEmpty}>
+                {EMPTY_PLAN_TEXT[section.focus]}
+              </AppText>
+            )}
+          </View>
+        );
+      })}
+    </View>
   );
 }
 
@@ -535,7 +547,7 @@ type VisitsView = 'plan' | 'prescriptions' | 'remarks';
 
 function Visits({ file }: { file: PatientFile }) {
   const [view, setView] = useState<VisitsView>('plan');
-  const planned = planEntries(file).length;
+  const planned = planCount(file);
   return (
     <View style={styles.records}>
       <Segment
@@ -840,20 +852,10 @@ const styles = StyleSheet.create({
     backgroundColor: colors.primary,
   },
   addPressed: { backgroundColor: colors.primaryPressed },
-  quickRow: { flexDirection: 'row', gap: space.sm },
-  quick: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: space.xs,
-    minHeight: touch.minHeight,
-    borderRadius: radius.md,
-    borderWidth: 1,
-    borderColor: colors.primary,
-    backgroundColor: colors.primarySoft,
-  },
-  quickPressed: { opacity: 0.8 },
+  planSections: { gap: space.xl },
+  planSection: { gap: space.sm },
+  sectionTitle: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: space.sm },
+  planEmpty: { paddingLeft: space.xl },
   sectionHead: { flexDirection: 'row', alignItems: 'center', gap: space.sm },
   branchRow: { flexDirection: 'row', alignItems: 'center', gap: space.xs },
   source: { gap: space.xxs },
