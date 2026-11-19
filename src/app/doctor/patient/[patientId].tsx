@@ -56,9 +56,6 @@ const TABS: { key: Tab; label: string; icon: typeof Pill }[] = [
 const openRemarks = (consultationId: string, patientId: string) =>
   router.push({ pathname: '/doctor/remarks/[consultationId]', params: { consultationId, patientId } });
 
-const openPlan = (prescriptionId: string, patientId: string) =>
-  router.push({ pathname: '/doctor/plan/[prescriptionId]', params: { prescriptionId, patientId } });
-
 const hasPlan = (html: string | null) => Boolean(htmlToMarkup(html).trim());
 
 type PlanFocus = 'plan' | 'medicines' | 'blood_work';
@@ -96,7 +93,7 @@ function PlanItemList({ items }: { items: PlanItem[] }) {
 }
 
 function textEntries(file: PatientFile): PlanEntry[] {
-  const own = (file.plans ?? [])
+  return (file.plans ?? [])
     .filter((t) => hasPlan(t.plan))
     .map((t) => ({
       key: `plan-${t.id}`,
@@ -107,20 +104,8 @@ function textEntries(file: PatientFile): PlanEntry[] {
       branch: t.branch,
       title: 'Plan of treatment',
       edit: t.editable ? () => openTreatmentPlan(t.id, file.patient.id, 'plan') : null,
-    }));
-  const fromPrescriptions = file.prescriptions
-    .filter((p) => hasPlan(p.planTreatment))
-    .map((p) => ({
-      key: `rx-${p.id}`,
-      date: p.date,
-      html: p.planTreatment,
-      items: [],
-      doctor: p.doctor,
-      branch: p.branch,
-      title: `Prescription #${p.prescriptionNo}`,
-      edit: p.editable ? () => openPlan(p.id, file.patient.id) : null,
-    }));
-  return [...own, ...fromPrescriptions].sort((a, b) => b.date.localeCompare(a.date));
+    }))
+    .sort((a, b) => b.date.localeCompare(a.date));
 }
 
 function itemEntries(file: PatientFile, kind: PlanItem['kind'], focus: PlanFocus, title: string) {
