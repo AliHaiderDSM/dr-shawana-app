@@ -294,6 +294,20 @@ function Prescriptions({ file }: { file: PatientFile }) {
                   </View>
                 ) : null}
                 <PrescriptionSections items={p.items} />
+                {hasPlan(p.planTreatment) || p.followupDate ? (
+                  <View style={styles.gap}>
+                    <PrescriptionHeading title="Plan of treatment" />
+                    {hasPlan(p.planTreatment) ? <RichTextView html={p.planTreatment} /> : null}
+                    {p.followupDate ? (
+                      <AppText variant="label">
+                        <AppText variant="label" weight="semibold">
+                          Follow up date:{' '}
+                        </AppText>
+                        {formatDate(p.followupDate)}
+                      </AppText>
+                    ) : null}
+                  </View>
+                ) : null}
                 {remark ? (
                   <View style={styles.remarkBox}>
                     <View style={styles.between}>
