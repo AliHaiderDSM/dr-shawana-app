@@ -1,5 +1,5 @@
 import { useLocalSearchParams } from 'expo-router';
-import { Building2, FlaskConical, NotebookPen, Pill, Stethoscope } from 'lucide-react-native';
+import { FlaskConical, NotebookPen, Pill, Stethoscope } from 'lucide-react-native';
 import { useMemo, useState, type ReactNode } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 import { CardSkeleton, EmptyState, ErrorState } from '@/components/feedback/states';
@@ -120,14 +120,6 @@ function Entry({
                 <Stethoscope size={icon.sm} color={colors.textMuted} />
                 <AppText variant="caption" tone="muted" numberOfLines={1} style={styles.flex}>
                   {plan.doctor}
-                </AppText>
-              </View>
-            ) : null}
-            {plan.branch ? (
-              <View style={styles.sourceItem}>
-                <Building2 size={icon.sm} color={colors.textMuted} />
-                <AppText variant="caption" tone="muted" numberOfLines={1} style={styles.flex}>
-                  {plan.branch} branch
                 </AppText>
               </View>
             ) : null}
