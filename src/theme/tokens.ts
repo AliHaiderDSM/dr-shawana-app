@@ -25,7 +25,7 @@ export const colors = {
   textMuted: brand.inkMuted,
   textInverse: '#FFFFFF',
   textInverseMuted: 'rgba(255, 255, 255, 0.82)',
-  onPrimarySoft: 'rgba(16, 44, 112, 0.16)',
+  onPrimarySoft: 'rgba(255, 255, 255, 0.2)',
   primary: brand.primary,
   primaryPressed: brand.primaryDark,
   primarySoft: brand.primaryTint,

@@ -1,5 +1,6 @@
 import { Pressable, StyleSheet, View } from 'react-native';
 import { AppText } from '@/components/ui/app-text';
+import { HeroGradient } from '@/components/ui/hero-gradient';
 import { WhatsAppIcon } from '@/components/ui/whatsapp-icon';
 import { colors, radius, shadow, space } from '@/theme/tokens';
 
@@ -26,6 +27,9 @@ export function MessagesTabButton({
       {({ pressed }) => (
         <>
           <View style={[styles.button, pressed && styles.pressed]}>
+            <View style={styles.fill}>
+              <HeroGradient />
+            </View>
             <WhatsAppIcon size={28} color={colors.textInverse} />
             {unread > 0 ? (
               <View style={styles.badge}>
@@ -51,14 +55,23 @@ const styles = StyleSheet.create({
     height: 54,
     marginTop: -20,
     borderRadius: radius.pill,
-    backgroundColor: colors.primary,
+    backgroundColor: colors.surface,
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 4,
     borderColor: colors.surface,
     ...shadow,
   },
-  pressed: { backgroundColor: colors.primaryPressed },
+  pressed: { opacity: 0.85 },
+  fill: {
+    position: 'absolute',
+    top: 0,
+    right: 0,
+    bottom: 0,
+    left: 0,
+    borderRadius: radius.pill,
+    overflow: 'hidden',
+  },
   badge: {
     position: 'absolute',
     top: -6,

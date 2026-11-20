@@ -78,8 +78,6 @@ export default function DoctorHomeScreen() {
     <Screen edges={['top', 'left', 'right']} refreshing={refreshing} onRefresh={onRefresh}>
       <View style={styles.hero}>
         <HeroGradient />
-        <View style={[styles.ring, styles.ringLarge]} />
-        <View style={[styles.ring, styles.ringSmall]} />
         <View style={styles.heroTop}>
           <View style={styles.flex}>
             <AppText variant="label" style={styles.heroMuted}>
@@ -223,9 +221,6 @@ const styles = StyleSheet.create({
     backgroundColor: colors.primary,
     overflow: 'hidden',
   },
-  ring: { position: 'absolute', borderRadius: radius.pill, backgroundColor: colors.heroAccent },
-  ringLarge: { width: 220, height: 220, top: -90, right: -70 },
-  ringSmall: { width: 120, height: 120, bottom: -50, left: -40 },
   heroTop: { flexDirection: 'row', alignItems: 'flex-start', gap: space.md },
   heroText: { color: colors.textInverse },
   heroMuted: { color: colors.textInverseMuted },
