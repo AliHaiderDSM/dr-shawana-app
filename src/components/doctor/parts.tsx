@@ -3,7 +3,7 @@ import type { ReactNode } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 import { AppText } from '@/components/ui/app-text';
 import { StatusBadge, type BadgeTone } from '@/components/ui/status-badge';
-import { formatDate, formatDateTime, formatTime } from '@/lib/format';
+import { appointmentNumber, formatDate, formatDateTime, formatTime } from '@/lib/format';
 import { colors, icon, radius, shadow, space, touch } from '@/theme/tokens';
 
 const isoDay = (d: Date) =>
@@ -87,6 +87,22 @@ export function RowCard({
     </Pressable>
   );
 }
+
+const VISIT_LABEL: Record<string, string> = { new: 'New visit', followup: 'Follow up' };
+const MODE_LABEL: Record<string, string> = { physical: 'In clinic', online: 'Online' };
+
+export const scheduleDetail = (a: {
+  appointmentNo: number;
+  repeatNo?: number | null;
+  visitType: string;
+  mode: string;
+}) =>
+  '#' +
+  appointmentNumber(a) +
+  ' · ' +
+  (VISIT_LABEL[a.visitType] ?? a.visitType) +
+  ' · ' +
+  (MODE_LABEL[a.mode] ?? a.mode);
 
 export function ScheduleRow({
   date,

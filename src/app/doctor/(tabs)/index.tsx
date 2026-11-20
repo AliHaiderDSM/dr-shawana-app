@@ -8,18 +8,17 @@ import {
   Stethoscope,
 } from 'lucide-react-native';
 import { Pressable, StyleSheet, View } from 'react-native';
-import { ChatRow, ScheduleRow } from '@/components/doctor/parts';
+import { ChatRow, ScheduleRow, scheduleDetail } from '@/components/doctor/parts';
 import { CardSkeleton, EmptyState, ErrorState, SkeletonBlock } from '@/components/feedback/states';
 import { AppText } from '@/components/ui/app-text';
 import { SectionHeader } from '@/components/ui/bits';
 import { Screen } from '@/components/ui/screen';
 import { useRefresh } from '@/hooks/use-refresh';
-import { appointmentNumber, greeting, initials } from '@/lib/format';
+import { greeting, initials } from '@/lib/format';
 import { colors, icon, radius, space, touch } from '@/theme/tokens';
 import { useGetDoctorHomeQuery } from '@/redux/features/doctor';
 
-const VISIT_LABEL: Record<string, string> = { new: 'New visit', followup: 'Follow up' };
-const MODE_LABEL: Record<string, string> = { physical: 'In clinic', online: 'Online' };
+const HOME_LIMIT = 5;
 
 function Stat({ label, value }: { label: string; value: number | undefined }) {
   return (
@@ -140,19 +139,19 @@ export default function DoctorHomeScreen() {
       ) : (
         <>
           <SectionHeader
-            title={`Today · ${h.schedule.length} appointment${h.schedule.length === 1 ? '' : 's'}`}
-            actionLabel="All"
-            onAction={() => router.push('/doctor/appointments')}
+            title={`Today · ${h.counts.today} appointment${h.counts.today === 1 ? '' : 's'}`}
+            actionLabel={h.schedule.length ? 'All' : undefined}
+            onAction={() => router.push('/doctor/today')}
           />
           {h.schedule.length ? (
             <View style={styles.list}>
-              {h.schedule.map((a) => (
+              {h.schedule.slice(0, HOME_LIMIT).map((a) => (
                 <ScheduleRow
                   key={a.id}
                   date={a.date}
                   timeFrom={a.timeFrom}
                   name={a.patient.name}
-                  detail={`#${appointmentNumber(a)} · ${VISIT_LABEL[a.visitType] ?? a.visitType} · ${MODE_LABEL[a.mode] ?? a.mode}`}
+                  detail={scheduleDetail(a)}
                   branch={a.branch}
                   status={a.status}
                   onPress={() =>

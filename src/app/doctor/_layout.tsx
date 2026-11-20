@@ -21,6 +21,7 @@ export default function DoctorLayout() {
       <Stack.Screen name="remarks/[consultationId]" options={{ title: 'Clinical remarks' }} />
       <Stack.Screen name="treatment-plan/[planId]" options={{ title: 'Plan of treatment' }} />
       <Stack.Screen name="appointments" options={{ title: 'Appointments' }} />
+      <Stack.Screen name="today" options={{ title: "Today's appointments" }} />
       <Stack.Screen name="medicines/index" options={{ title: 'Medicines' }} />
       <Stack.Screen name="medicines/[patientId]" options={{ title: 'Medicines' }} />
       <Stack.Screen name="profile-edit" options={{ title: 'Edit profile' }} />
