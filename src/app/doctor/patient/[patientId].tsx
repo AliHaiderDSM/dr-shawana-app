@@ -28,7 +28,6 @@ import { CardSkeleton, EmptyState, ErrorState } from '@/components/feedback/stat
 import { PrescriptionHeading, PrescriptionSections } from '@/components/prescription-sections';
 import { AppText } from '@/components/ui/app-text';
 import { Button } from '@/components/ui/button';
-import { HeroGradient } from '@/components/ui/hero-gradient';
 import { RichTextView } from '@/components/ui/rich-text-view';
 import { Screen } from '@/components/ui/screen';
 import { StatusBadge } from '@/components/ui/status-badge';
@@ -653,7 +652,6 @@ export default function DoctorPatientFileScreen() {
       {fromChat ? <Stack.Screen options={{ title: p.name }} /> : null}
       {fromChat ? null : (
         <View style={styles.hero}>
-          <HeroGradient />
           <View style={styles.heroTop}>
             <Initials text={initials(p.name)} size={56} />
             <View style={styles.flex}>

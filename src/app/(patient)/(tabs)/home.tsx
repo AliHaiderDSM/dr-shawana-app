@@ -20,7 +20,6 @@ import { AppText } from '@/components/ui/app-text';
 import { Notice, SectionHeader } from '@/components/ui/bits';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { HeroGradient } from '@/components/ui/hero-gradient';
 import { Screen } from '@/components/ui/screen';
 import { WhatsAppIcon } from '@/components/ui/whatsapp-icon';
 import { useRefresh } from '@/hooks/use-refresh';
@@ -84,7 +83,6 @@ export default function HomeScreen() {
   return (
     <Screen edges={['top', 'left', 'right']} refreshing={refreshing} onRefresh={onRefresh}>
       <View style={styles.hero}>
-        <HeroGradient />
         <View style={styles.heroTop}>
           <View style={styles.flex}>
             <AppText variant="label" style={styles.heroMuted}>

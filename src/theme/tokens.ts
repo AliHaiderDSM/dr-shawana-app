@@ -1,12 +1,10 @@
 import { Platform } from 'react-native';
 
 export const brand = {
-  primary: '#3B6FE0',
-  primaryDark: '#2F5FCB',
+  primary: '#2B5ACC',
+  primaryDark: '#214DBA',
   primaryDeep: '#1D44A3',
-  primaryTint: '#EDF3FF',
-  heroStart: '#4A7FE6',
-  heroEnd: '#82B6F8',
+  primaryTint: '#E7F0FF',
   green: '#1B7A48',
   greenTint: '#E3F6EA',
   ink: '#1E2533',
