@@ -1,23 +1,37 @@
 import { Platform } from 'react-native';
 
+export const brand = {
+  primary: '#B23A45',
+  primaryDark: '#952F39',
+  primaryDeep: '#7E2731',
+  primaryTint: '#FAEFF0',
+  green: '#3B5A14',
+  greenTint: '#EEF3E6',
+  ink: '#1F1D1D',
+  inkMuted: '#6B6564',
+  paper: '#F8F6F5',
+  paperMuted: '#F2EEED',
+  line: '#E7E1DF',
+} as const;
+
 export const colors = {
-  background: '#F8F6F5',
+  background: brand.paper,
   surface: '#FFFFFF',
-  surfaceMuted: '#F2EEED',
-  border: '#E7E1DF',
-  text: '#1F1D1D',
-  textMuted: '#6B6564',
+  surfaceMuted: brand.paperMuted,
+  border: brand.line,
+  text: brand.ink,
+  textMuted: brand.inkMuted,
   textInverse: '#FFFFFF',
   textInverseMuted: 'rgba(255, 255, 255, 0.82)',
   onPrimarySoft: 'rgba(255, 255, 255, 0.18)',
-  primary: '#B23A45',
-  primaryPressed: '#952F39',
-  primarySoft: '#FAEFF0',
-  primarySoftText: '#7E2731',
-  accent: '#3B5A14',
-  accentSoft: '#EEF3E6',
+  primary: brand.primary,
+  primaryPressed: brand.primaryDark,
+  primarySoft: brand.primaryTint,
+  primarySoftText: brand.primaryDeep,
+  accent: brand.green,
+  accentSoft: brand.greenTint,
   success: '#3B6A1A',
-  successSoft: '#EEF3E6',
+  successSoft: brand.greenTint,
   warning: '#9A4A04',
   warningSoft: '#FDF1E3',
   danger: '#C8261B',
@@ -32,7 +46,7 @@ export const colors = {
   heroAccent: 'rgba(255, 255, 255, 0.08)',
 } as const;
 
-export const chart = ['#B23A45', '#2F6FD0', '#C98A12', '#3B5A14', '#7E57C2'] as const;
+export const chart = [brand.primary, '#2F6FD0', '#C98A12', brand.green, '#7E57C2'] as const;
 
 export const space = {
   xxs: 2,

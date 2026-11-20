@@ -1,6 +1,7 @@
 import Svg, { G, Path } from 'react-native-svg';
+import { colors } from '@/theme/tokens';
 
-export function WhatsAppIcon({ size = 28, color = '#FFFFFF' }: { size?: number; color?: string }) {
+export function WhatsAppIcon({ size = 28, color = colors.textInverse }: { size?: number; color?: string }) {
   return (
     <Svg
       width={size}

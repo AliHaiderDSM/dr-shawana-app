@@ -11,6 +11,7 @@ import { printToFileAsync } from 'expo-print';
 import { isAvailableAsync, shareAsync } from 'expo-sharing';
 import type { PatientProfile } from '@/redux/features/patient';
 import type { PrescriptionDetail } from '@/redux/features/prescriptions';
+import { colors } from '@/theme/tokens';
 import { formatDate, htmlToText } from './format';
 import { prescriptionBlocks } from './prescription-blocks';
 
@@ -45,23 +46,23 @@ function buildHtml(p: PrescriptionDetail, patient: PatientProfile | undefined, l
 <style>
   @page { size: A4; margin: 16mm 14mm; }
   * { box-sizing: border-box; }
-  body { font-family: -apple-system, Roboto, "Segoe UI", Arial, sans-serif; color: #1F1D1D; font-size: 12px; line-height: 1.5; margin: 0; }
-  header { display: flex; justify-content: space-between; align-items: center; gap: 16px; border-bottom: 2px solid #B23A45; padding-bottom: 12px; }
+  body { font-family: -apple-system, Roboto, "Segoe UI", Arial, sans-serif; color: ${colors.text}; font-size: 12px; line-height: 1.5; margin: 0; }
+  header { display: flex; justify-content: space-between; align-items: center; gap: 16px; border-bottom: 2px solid ${colors.primary}; padding-bottom: 12px; }
   .brand { display: flex; align-items: center; gap: 12px; }
   .brand img { height: 52px; width: auto; }
   .clinic { font-size: 16px; font-weight: 700; }
-  .muted { color: #6B6564; }
+  .muted { color: ${colors.textMuted}; }
   .small { font-size: 11px; }
   .title { text-align: right; }
   .title .word { font-size: 15px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; }
   .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px 24px; margin-top: 14px; }
   .block { margin-top: 14px; page-break-inside: avoid; }
-  .heading { font-size: 14px; font-weight: 700; color: #B23A45; letter-spacing: 0.06em; text-transform: uppercase; border-bottom: 1px solid #E7E1DF; padding-bottom: 4px; margin-bottom: 6px; }
-  .group { font-size: 12px; font-weight: 600; color: #6B6564; margin-top: 6px; }
+  .heading { font-size: 14px; font-weight: 700; color: ${colors.primary}; letter-spacing: 0.06em; text-transform: uppercase; border-bottom: 1px solid ${colors.border}; padding-bottom: 4px; margin-bottom: 6px; }
+  .group { font-size: 12px; font-weight: 600; color: ${colors.textMuted}; margin-top: 6px; }
   ul { margin: 2px 0 0; padding-left: 20px; }
   li { margin-bottom: 6px; }
-  .note { font-size: 11px; color: #6B6564; }
-  footer { margin-top: 28px; border-top: 1px solid #E7E1DF; padding-top: 8px; font-size: 10px; color: #6B6564; text-align: center; }
+  .note { font-size: 11px; color: ${colors.textMuted}; }
+  footer { margin-top: 28px; border-top: 1px solid ${colors.border}; padding-top: 8px; font-size: 10px; color: ${colors.textMuted}; text-align: center; }
 </style>
 </head>
 <body>
