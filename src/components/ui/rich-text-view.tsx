@@ -1,11 +1,10 @@
-import { StyleSheet, View } from 'react-native';
+import { StyleSheet } from 'react-native';
 import { htmlToMarkup, inlineRuns } from '@/lib/rich-text';
-import { space } from '@/theme/tokens';
 import { AppText } from './app-text';
 
-function Line({ text }: { text: string }) {
+function Runs({ text }: { text: string }) {
   return (
-    <AppText selectable>
+    <>
       {inlineRuns(text).map((run, index) => (
         <AppText
           key={index}
@@ -15,40 +14,39 @@ function Line({ text }: { text: string }) {
           {run.text}
         </AppText>
       ))}
+    </>
+  );
+}
+
+function lineParts(line: string) {
+  const bullet = /^\s*[-*•]\s+(.*)$/.exec(line);
+  if (bullet) return { marker: '•  ', text: bullet[1] ?? '' };
+  const number = /^\s*(\d+)[.)]\s+(.*)$/.exec(line);
+  if (number) return { marker: `${number[1]}.  `, text: number[2] ?? '' };
+  return { marker: '', text: line };
+}
+
+export function RichTextView({ html }: { html: string | null | undefined }) {
+  const lines = htmlToMarkup(html)
+    .split('\n')
+    .map((line) => line.trimEnd());
+  return (
+    <AppText selectable style={styles.text}>
+      {lines.map((line, index) => {
+        const { marker, text } = lineParts(line);
+        return (
+          <AppText key={index}>
+            {index > 0 ? '\n' : ''}
+            {marker ? <AppText weight="semibold">{marker}</AppText> : null}
+            <Runs text={text} />
+          </AppText>
+        );
+      })}
     </AppText>
   );
 }
 
-export function RichTextView({ html }: { html: string | null | undefined }) {
-  const lines = htmlToMarkup(html).split('\n');
-  return (
-    <View style={styles.wrap}>
-      {lines.map((line, index) => {
-        const bullet = /^\s*[-*•]\s+(.*)$/.exec(line);
-        const number = /^\s*(\d+)[.)]\s+(.*)$/.exec(line);
-        if (!line.trim()) return <View key={index} style={styles.gap} />;
-        if (bullet || number)
-          return (
-            <View key={index} style={styles.item}>
-              <AppText weight="semibold" style={styles.marker}>
-                {bullet ? '•' : `${number![1]}.`}
-              </AppText>
-              <View style={styles.flex}>
-                <Line text={bullet ? bullet[1]! : number![2]!} />
-              </View>
-            </View>
-          );
-        return <Line key={index} text={line} />;
-      })}
-    </View>
-  );
-}
-
 const styles = StyleSheet.create({
-  wrap: { gap: space.xs },
-  gap: { height: space.xs },
-  item: { flexDirection: 'row', gap: space.sm },
-  marker: { minWidth: 18 },
-  flex: { flex: 1, minWidth: 0 },
+  text: { lineHeight: 24 },
   italic: { fontStyle: 'italic' },
 });

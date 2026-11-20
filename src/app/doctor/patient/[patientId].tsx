@@ -359,19 +359,42 @@ const EMPTY_PLAN_TEXT: Record<PlanFocus, string> = {
 };
 
 function PlanOfTreatment({ file }: { file: PatientFile }) {
+  const [open, setOpen] = useState<PlanFocus[]>(['plan']);
+  const toggle = (focus: PlanFocus) =>
+    setOpen((current) =>
+      current.includes(focus) ? current.filter((f) => f !== focus) : [...current, focus],
+    );
   return (
     <View style={styles.planSections}>
       {planSections(file).map((section) => {
         const Icon = section.icon;
+        const expanded = open.includes(section.focus);
         return (
-          <View key={section.focus} style={styles.planSection}>
+          <View key={section.focus} style={[styles.planSection, styles.planPanel]}>
             <View style={styles.between}>
-              <View style={styles.sectionTitle}>
+              <Pressable
+                accessibilityRole="button"
+                accessibilityState={{ expanded }}
+                accessibilityLabel={`${section.title}, ${section.entries.length}`}
+                onPress={() => toggle(section.focus)}
+                hitSlop={6}
+                style={styles.sectionTitle}
+              >
                 <Icon size={icon.md} color={colors.primary} />
-                <AppText weight="semibold" accessibilityRole="header" style={styles.flex}>
+                <AppText weight="semibold" accessibilityRole="header">
                   {section.title}
                 </AppText>
-              </View>
+                <View style={styles.sectionCount}>
+                  <AppText variant="caption" weight="bold" tone="primary">
+                    {section.entries.length}
+                  </AppText>
+                </View>
+                {expanded ? (
+                  <ChevronUp size={icon.sm} color={colors.textMuted} />
+                ) : (
+                  <ChevronDown size={icon.sm} color={colors.textMuted} />
+                )}
+              </Pressable>
               <Pressable
                 accessibilityRole="button"
                 accessibilityLabel={`Add ${section.title.toLowerCase()}`}
@@ -385,7 +408,7 @@ function PlanOfTreatment({ file }: { file: PatientFile }) {
                 </AppText>
               </Pressable>
             </View>
-            {section.entries.length ? (
+            {!expanded ? null : section.entries.length ? (
               section.entries.map((entry, index) => (
                 <Entry key={entry.key} date={entry.date} last={index === section.entries.length - 1}>
                   <View style={styles.between}>
@@ -851,8 +874,22 @@ const styles = StyleSheet.create({
     backgroundColor: colors.primary,
   },
   addPressed: { backgroundColor: colors.primaryPressed },
-  planSections: { gap: space.xl },
+  planSections: { gap: space.md },
   planSection: { gap: space.sm },
+  planPanel: {
+    padding: space.md,
+    borderRadius: radius.lg,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: colors.border,
+    backgroundColor: colors.surface,
+  },
+  sectionCount: {
+    minWidth: 22,
+    paddingHorizontal: 6,
+    borderRadius: radius.pill,
+    alignItems: 'center',
+    backgroundColor: colors.primarySoft,
+  },
   sectionTitle: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: space.sm },
   planEmpty: { paddingLeft: space.xl },
   sectionHead: { flexDirection: 'row', alignItems: 'center', gap: space.sm },
