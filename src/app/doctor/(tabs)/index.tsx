@@ -167,7 +167,7 @@ export default function DoctorHomeScreen() {
             <EmptyState
               icon={CalendarCheck}
               title="No appointments today"
-              message="Tap All to see the calendar of every day."
+              message="Tap Appointments above to see the calendar of every day."
             />
           )}
 

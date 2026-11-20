@@ -1,24 +1,8 @@
 import { Tabs } from 'expo-router';
-import { House, MessageCircle, UserRound, Users } from 'lucide-react-native';
-import { StyleSheet, View } from 'react-native';
-import { AppText } from '@/components/ui/app-text';
-import { colors, fontSize, radius } from '@/theme/tokens';
+import { House, UserRound, Users } from 'lucide-react-native';
+import { MessagesTabButton } from '@/components/navigation/messages-tab-button';
+import { colors, fontSize } from '@/theme/tokens';
 import { useGetDoctorHomeQuery } from '@/redux/features/doctor';
-
-function WithBadge({ count, children }: { count: number; children: React.ReactNode }) {
-  return (
-    <View>
-      {children}
-      {count > 0 ? (
-        <View style={styles.badge}>
-          <AppText variant="caption" weight="bold" style={styles.badgeText}>
-            {count > 99 ? '99+' : count}
-          </AppText>
-        </View>
-      ) : null}
-    </View>
-  );
-}
 
 export default function DoctorTabsLayout() {
   const unread = useGetDoctorHomeQuery().data?.counts.unread ?? 0;
@@ -57,10 +41,13 @@ export default function DoctorTabsLayout() {
         name="messages"
         options={{
           title: 'Messages',
-          tabBarIcon: ({ color, size }) => (
-            <WithBadge count={unread}>
-              <MessageCircle color={color} size={size} />
-            </WithBadge>
+          tabBarButton: (props) => (
+            <MessagesTabButton
+              onPress={() => props.onPress?.(undefined as never)}
+              focused={Boolean(props['aria-selected'])}
+              unread={unread}
+              hint="Chat with your patients"
+            />
           ),
         }}
       />
@@ -74,21 +61,3 @@ export default function DoctorTabsLayout() {
     </Tabs>
   );
 }
-
-const styles = StyleSheet.create({
-  badge: {
-    position: 'absolute',
-    top: -6,
-    right: -12,
-    minWidth: 18,
-    height: 18,
-    paddingHorizontal: 4,
-    borderRadius: radius.pill,
-    backgroundColor: colors.danger,
-    borderWidth: 2,
-    borderColor: colors.surface,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  badgeText: { color: colors.textInverse, fontSize: 10, lineHeight: 12 },
-});
