@@ -204,25 +204,9 @@ function Bubble({
                   >
                     PLAN OF TREATMENT
                   </AppText>
-                  {(message.body ?? '').split('\n').map((line, index) => (
-                    <AppText
-                      key={index}
-                      variant={index === 0 ? 'body' : 'label'}
-                      weight={index === 0 ? 'semibold' : undefined}
-                      style={{ color: fg }}
-                    >
-                      {line}
-                    </AppText>
-                  ))}
-                  {onOpenPlan ? (
-                    <AppText
-                      variant="label"
-                      weight="semibold"
-                      style={{ color: mine ? colors.textInverse : colors.primary }}
-                    >
-                      View plan
-                    </AppText>
-                  ) : null}
+                  <AppText weight="semibold" style={{ color: fg }}>
+                    {(message.body ?? '').split('\n')[0]}
+                  </AppText>
                 </View>
                 {onOpenPlan ? (
                   <ChevronRight size={icon.md} color={mine ? colors.textInverse : colors.primary} />
