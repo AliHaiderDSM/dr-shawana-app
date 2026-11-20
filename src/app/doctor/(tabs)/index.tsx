@@ -12,6 +12,7 @@ import { ChatRow, ScheduleRow, scheduleDetail } from '@/components/doctor/parts'
 import { CardSkeleton, EmptyState, ErrorState, SkeletonBlock } from '@/components/feedback/states';
 import { AppText } from '@/components/ui/app-text';
 import { SectionHeader } from '@/components/ui/bits';
+import { HeroGradient } from '@/components/ui/hero-gradient';
 import { Screen } from '@/components/ui/screen';
 import { useRefresh } from '@/hooks/use-refresh';
 import { greeting, initials } from '@/lib/format';
@@ -76,6 +77,7 @@ export default function DoctorHomeScreen() {
   return (
     <Screen edges={['top', 'left', 'right']} refreshing={refreshing} onRefresh={onRefresh}>
       <View style={styles.hero}>
+        <HeroGradient />
         <View style={[styles.ring, styles.ringLarge]} />
         <View style={[styles.ring, styles.ringSmall]} />
         <View style={styles.heroTop}>

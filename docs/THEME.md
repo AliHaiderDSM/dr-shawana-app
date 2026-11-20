@@ -12,6 +12,7 @@ Edit only the `brand` object at the top of `src/theme/tokens.ts`:
 | `primaryDark` | Buttons while pressed |
 | `primaryDeep` | Text on the light primary tint |
 | `primaryTint` | Light backgrounds behind icons, times and chips |
+| `heroStart`, `heroEnd` | The gradient on the top card of the patient and doctor home screens (`HeroGradient`) |
 | `green` | Leaf stripe on the home cards and other small accents |
 | `greenTint` | Light green backgrounds (for example the Booked status) |
 | `ink` | Main text |

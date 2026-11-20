@@ -1,17 +1,19 @@
 import { Platform } from 'react-native';
 
 export const brand = {
-  primary: '#B23A45',
-  primaryDark: '#952F39',
-  primaryDeep: '#7E2731',
-  primaryTint: '#FAEFF0',
-  green: '#3B5A14',
-  greenTint: '#EEF3E6',
-  ink: '#1F1D1D',
-  inkMuted: '#6B6564',
-  paper: '#F8F6F5',
-  paperMuted: '#F2EEED',
-  line: '#E7E1DF',
+  primary: '#3B6FE0',
+  primaryDark: '#2F5FCB',
+  primaryDeep: '#1D44A3',
+  primaryTint: '#EDF3FF',
+  heroStart: '#2B5ACC',
+  heroEnd: '#4A7FE6',
+  green: '#1B7A48',
+  greenTint: '#E3F6EA',
+  ink: '#1E2533',
+  inkMuted: '#626872',
+  paper: '#F9FAFC',
+  paperMuted: '#F2F4F7',
+  line: '#E1E4E9',
 } as const;
 
 export const colors = {
@@ -30,7 +32,7 @@ export const colors = {
   primarySoftText: brand.primaryDeep,
   accent: brand.green,
   accentSoft: brand.greenTint,
-  success: '#3B6A1A',
+  success: brand.green,
   successSoft: brand.greenTint,
   warning: '#9A4A04',
   warningSoft: '#FDF1E3',
@@ -38,13 +40,13 @@ export const colors = {
   dangerSoft: '#FDECEA',
   info: '#1F5BB8',
   infoSoft: '#E8F0FC',
-  neutralSoft: '#F1EDEC',
-  overlay: 'rgba(31, 29, 29, 0.45)',
-  skeleton: '#ECE6E4',
+  neutralSoft: '#EEF1F5',
+  overlay: 'rgba(30, 37, 51, 0.45)',
+  skeleton: '#E6EAF0',
   heroAccent: 'rgba(255, 255, 255, 0.08)',
 } as const;
 
-export const chart = [brand.primary, '#2F6FD0', '#C98A12', brand.green, '#7E57C2'] as const;
+export const chart = [brand.primary, '#D9822B', brand.green, '#7E57C2', '#C2185B'] as const;
 
 export const space = {
   xxs: 2,
