@@ -243,6 +243,8 @@ const styles = StyleSheet.create({
     gap: space.lg,
     borderRadius: radius.lg,
     backgroundColor: colors.primary,
+    borderLeftWidth: 4,
+    borderLeftColor: colors.accent,
     overflow: 'hidden',
   },
   ring: { position: 'absolute', borderRadius: radius.pill, backgroundColor: colors.heroAccent },
