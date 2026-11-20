@@ -2,7 +2,6 @@ import { router, type Href } from 'expo-router';
 import {
   ChevronRight,
   ClipboardList,
-  MessageCircle,
   CalendarDays,
   CalendarPlus,
   FileText,
@@ -22,6 +21,7 @@ import { Notice, SectionHeader } from '@/components/ui/bits';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Screen } from '@/components/ui/screen';
+import { WhatsAppIcon } from '@/components/ui/whatsapp-icon';
 import { useRefresh } from '@/hooks/use-refresh';
 import { firstName, greeting, initials } from '@/lib/format';
 import { colors, icon, radius, space, touch } from '@/theme/tokens';
@@ -136,7 +136,7 @@ export default function HomeScreen() {
           style={({ pressed }) => [styles.heroCta, pressed && styles.heroCtaPressed]}
         >
           <View style={styles.heroCtaIcon}>
-            <MessageCircle size={22} color={colors.textInverse} />
+            <WhatsAppIcon size={22} color={colors.textInverse} />
           </View>
           <View style={styles.flex}>
             <AppText weight="semibold">
