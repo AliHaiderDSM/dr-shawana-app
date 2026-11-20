@@ -28,6 +28,7 @@ import { CardSkeleton, EmptyState, ErrorState } from '@/components/feedback/stat
 import { PrescriptionHeading, PrescriptionSections } from '@/components/prescription-sections';
 import { AppText } from '@/components/ui/app-text';
 import { Button } from '@/components/ui/button';
+import { HeroGradient } from '@/components/ui/hero-gradient';
 import { RichTextView } from '@/components/ui/rich-text-view';
 import { Screen } from '@/components/ui/screen';
 import { StatusBadge } from '@/components/ui/status-badge';
@@ -652,6 +653,7 @@ export default function DoctorPatientFileScreen() {
       {fromChat ? <Stack.Screen options={{ title: p.name }} /> : null}
       {fromChat ? null : (
         <View style={styles.hero}>
+          <HeroGradient />
           <View style={styles.heroTop}>
             <Initials text={initials(p.name)} size={56} />
             <View style={styles.flex}>
@@ -766,7 +768,13 @@ const styles = StyleSheet.create({
   planItem: { flexDirection: 'row', alignItems: 'center', gap: space.sm },
   dotSmall: { width: 6, height: 6, borderRadius: radius.pill, backgroundColor: colors.primary },
   between: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: space.sm },
-  hero: { padding: space.lg, gap: space.md, borderRadius: radius.lg, backgroundColor: colors.primary },
+  hero: {
+    padding: space.lg,
+    gap: space.md,
+    borderRadius: radius.lg,
+    backgroundColor: colors.primary,
+    overflow: 'hidden',
+  },
   heroTop: { flexDirection: 'row', alignItems: 'center', gap: space.md },
   heroText: { color: colors.textInverse },
   heroMuted: { color: colors.textInverseMuted },
