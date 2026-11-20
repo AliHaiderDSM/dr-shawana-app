@@ -124,12 +124,12 @@ export default function DoctorHomeScreen() {
           icon={CalendarDays}
           onPress={() => router.push('/doctor/appointments')}
         />
-        <Action
+        {/* <Action
           label="Medicines"
           hint="Medicines and supplements of a patient"
           icon={Pill}
           onPress={() => router.push('/doctor/medicines')}
-        />
+        /> */}
       </View>
 
       {home.isLoading ? (
