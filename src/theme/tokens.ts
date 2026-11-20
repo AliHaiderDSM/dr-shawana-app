@@ -5,7 +5,7 @@ export const brand = {
   primaryDark: '#2F5FCB',
   primaryDeep: '#1D44A3',
   primaryTint: '#EDF3FF',
-  heroStart: '#2B5ACC',
+  heroStart: '#3B6FE0',
   heroEnd: '#4A7FE6',
   green: '#1B7A48',
   greenTint: '#E3F6EA',
