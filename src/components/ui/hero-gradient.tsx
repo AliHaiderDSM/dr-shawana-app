@@ -4,9 +4,9 @@ import { brand } from '@/theme/tokens';
 
 export function HeroGradient({ from = brand.heroStart, to = brand.heroEnd }: { from?: string; to?: string }) {
   return (
-    <Svg style={StyleSheet.absoluteFill} pointerEvents="none" preserveAspectRatio="none">
+    <Svg style={StyleSheet.absoluteFill} width="100%" height="100%" pointerEvents="none">
       <Defs>
-        <LinearGradient id="hero" x1="0" y1="0" x2="1" y2="1">
+        <LinearGradient id="hero" x1="0" y1="0" x2="1" y2="0.6">
           <Stop offset="0" stopColor={from} />
           <Stop offset="1" stopColor={to} />
         </LinearGradient>
