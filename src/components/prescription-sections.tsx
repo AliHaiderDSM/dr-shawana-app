@@ -34,14 +34,14 @@ function ItemRow({ item, first }: { item: SectionItem; first: boolean }) {
     <View style={[styles.item, !first && styles.itemBorder]}>
       <View style={styles.itemHead}>
         <View style={styles.bullet} />
-        <AppText weight="semibold" style={styles.flex}>
+        <AppText selectable weight="semibold" style={styles.flex}>
           {item.name}
           {item.dose ? <AppText weight="regular"> — {item.dose}</AppText> : null}
         </AppText>
         {item.optional ? <StatusBadge label="Optional" tone="neutral" /> : null}
       </View>
       {item.instructions ? (
-        <AppText variant="label" tone="muted" style={styles.indent}>
+        <AppText selectable variant="label" tone="muted" style={styles.indent}>
           How to use: {item.instructions}
         </AppText>
       ) : null}

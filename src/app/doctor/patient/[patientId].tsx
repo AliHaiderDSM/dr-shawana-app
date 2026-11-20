@@ -290,7 +290,7 @@ function Prescriptions({ file }: { file: PatientFile }) {
                 {p.diagnosis?.trim() ? (
                   <View style={styles.gap}>
                     <PrescriptionHeading title="Diagnosis" />
-                    <AppText>{p.diagnosis.trim()}</AppText>
+                    <AppText selectable>{p.diagnosis.trim()}</AppText>
                   </View>
                 ) : null}
                 <PrescriptionSections items={p.items} />

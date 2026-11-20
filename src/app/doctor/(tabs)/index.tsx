@@ -288,7 +288,7 @@ const styles = StyleSheet.create({
     width: 10,
     height: 10,
     borderRadius: radius.pill,
-    backgroundColor: colors.whatsapp,
+    backgroundColor: colors.accent,
     borderWidth: 2,
     borderColor: colors.primarySoft,
   },

@@ -5,7 +5,7 @@ import { AppText } from './app-text';
 
 function Line({ text }: { text: string }) {
   return (
-    <AppText>
+    <AppText selectable>
       {inlineRuns(text).map((run, index) => (
         <AppText
           key={index}

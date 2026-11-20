@@ -188,7 +188,7 @@ const styles = StyleSheet.create({
     height: 22,
     paddingHorizontal: 6,
     borderRadius: radius.pill,
-    backgroundColor: colors.whatsapp,
+    backgroundColor: colors.accent,
     alignItems: 'center',
     justifyContent: 'center',
   },

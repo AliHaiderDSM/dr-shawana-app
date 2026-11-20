@@ -1,8 +1,7 @@
 import { Tabs } from 'expo-router';
-import { History, House, Pill, UserRound } from 'lucide-react-native';
+import { History, House, MessageCircle, Pill, UserRound } from 'lucide-react-native';
 import { Pressable, StyleSheet, View } from 'react-native';
 import { AppText } from '@/components/ui/app-text';
-import { WhatsAppIcon } from '@/components/ui/whatsapp-icon';
 import { colors, fontSize, radius, shadow, space } from '@/theme/tokens';
 import { useGetChatUnreadQuery } from '@/redux/features/chat';
 
@@ -27,7 +26,7 @@ function MessagesButton({
       {({ pressed }) => (
         <>
           <View style={[styles.center, pressed && styles.centerPressed]}>
-            <WhatsAppIcon size={28} color={colors.textInverse} />
+            <MessageCircle size={28} color={colors.textInverse} />
             {unread > 0 ? (
               <View style={styles.badge}>
                 <AppText variant="caption" weight="bold" style={styles.badgeText}>
@@ -116,14 +115,14 @@ const styles = StyleSheet.create({
     height: 54,
     marginTop: -20,
     borderRadius: radius.pill,
-    backgroundColor: colors.whatsapp,
+    backgroundColor: colors.primary,
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 4,
     borderColor: colors.surface,
     ...shadow,
   },
-  centerPressed: { backgroundColor: colors.whatsappPressed },
+  centerPressed: { backgroundColor: colors.primaryPressed },
   badge: {
     position: 'absolute',
     top: -6,

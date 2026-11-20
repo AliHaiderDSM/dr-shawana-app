@@ -22,7 +22,7 @@ Edit only the `brand` object at the top of `src/theme/tokens.ts`:
 
 `colors`, `chart` and the prescription PDF read from `brand`, so the whole app, both the patient and doctor sides, changes together. Keep text readable: white text must stay readable on `primary`.
 
-Status colours (`warning`, `danger`, `info`) and the WhatsApp green live in `colors` and are meant to stay the same.
+Status colours (`warning`, `danger`, `info`) live in `colors` and are meant to stay the same.
 
 After changing colours, run `npx tsc --noEmit`, then send them to the phones with `eas update`.
 

@@ -41,8 +41,6 @@ export const colors = {
   neutralSoft: '#F1EDEC',
   overlay: 'rgba(31, 29, 29, 0.45)',
   skeleton: '#ECE6E4',
-  whatsapp: '#25D366',
-  whatsappPressed: '#1DA851',
   heroAccent: 'rgba(255, 255, 255, 0.08)',
 } as const;
 
